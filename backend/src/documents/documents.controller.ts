@@ -29,7 +29,9 @@ import { join } from 'path';
 import * as fs from 'fs/promises';
 import { mkdir } from 'fs/promises';
 import { Prisma } from '@prisma/client';
+import { ApiOAuth2 } from '@nestjs/swagger';
 
+@ApiOAuth2([], 'oauth2-login')
 @UseGuards(JwtAuthGuard)
 @Controller('documents')
 export class DocumentsController {
