@@ -3,8 +3,8 @@ import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 
 @Injectable()
-export class DocumentService {
-  private readonly logger = new Logger(DocumentService.name);
+export class DocumentsService {
+  private readonly logger = new Logger(DocumentsService.name);
   constructor(private readonly databaseService: DatabaseService) {}
 
   async create(createDocumentDto: Prisma.DocumentCreateInput) {
@@ -27,6 +27,7 @@ export class DocumentService {
           title: true,
           originalFileName: true,
           filePath: true,
+          mimeType: true,
           size: true,
           status: true,
         },

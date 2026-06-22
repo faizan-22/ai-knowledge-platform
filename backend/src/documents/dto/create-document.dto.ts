@@ -1,4 +1,4 @@
-import { IsEnum, IsNotEmpty, IsString } from 'class-validator';
+import { IsEnum, IsInt, IsNotEmpty, IsString } from 'class-validator';
 
 export class CreateDocumentDto {
   @IsString()
@@ -9,9 +9,12 @@ export class CreateDocumentDto {
   @IsNotEmpty()
   filePath: string;
 
+  @IsInt()
+  size: number;
+
   @IsString()
   @IsNotEmpty()
-  size: string;
+  mimeType: string;
 
   @IsEnum(['UPLOADED', 'PROCESSING', 'READY', 'FAILED'], {
     message: 'Not a valid status',

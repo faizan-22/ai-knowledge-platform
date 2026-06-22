@@ -13,15 +13,15 @@ import {
   ValidationPipe,
   Request,
 } from '@nestjs/common';
-import { DocumentService } from './document.service';
+import { DocumentsService } from './documents.service';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { JwtAuthGuard } from 'src/auth/auth.guard';
 
 @UseGuards(JwtAuthGuard)
-@Controller('document')
-export class DocumentController {
-  constructor(private readonly documentService: DocumentService) {}
+@Controller('documents')
+export class DocumentsController {
+  constructor(private readonly documentsService: DocumentsService) {}
 
   @Post()
   create(
@@ -40,19 +40,19 @@ export class DocumentController {
       },
       originalFileName: orgFileName,
     };
-    return this.documentService.create(documentData);
+    return this.documentsService.create(documentData);
   }
 
   @Get()
   findAll(@Request() req) {
     const userId = parseInt(req.payload.sub);
-    return this.documentService.findAll(userId);
+    return this.documentsService.findAll(userId);
   }
 
   @Get(':id')
   findOne(@Request() req, @Param('id') id: string) {
     const userId = parseInt(req.payload.sub);
-    return this.documentService.findOne(+id, userId);
+    return this.documentsService.findOne(+id, userId);
   }
 
   @Patch(':id')
@@ -62,12 +62,12 @@ export class DocumentController {
     @Body(ValidationPipe) updateDocumentDto: UpdateDocumentDto,
   ) {
     const userId = parseInt(req.payload.sub);
-    return this.documentService.update(+id, userId, updateDocumentDto);
+    return this.documentsService.update(+id, userId, updateDocumentDto);
   }
 
   @Delete(':id')
   remove(@Request() req, @Param('id') id: string) {
     const userId = parseInt(req.payload.sub);
-    return this.documentService.remove(+id, userId);
+    return this.documentsService.remove(+id, userId);
   }
 }
