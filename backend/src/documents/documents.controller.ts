@@ -12,35 +12,70 @@ import {
   UseGuards,
   ValidationPipe,
   Request,
+  UseInterceptors,
+  UploadedFile,
+  Logger,
+  ParseFilePipe,
+  MaxFileSizeValidator,
+  FileTypeValidator,
 } from '@nestjs/common';
 import { DocumentsService } from './documents.service';
-import { CreateDocumentDto } from './dto/create-document.dto';
 import { UpdateDocumentDto } from './dto/update-document.dto';
 import { JwtAuthGuard } from 'src/auth/auth.guard';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Express } from 'express';
+import { memoryStorage } from 'multer';
+import { join } from 'path';
+import * as fs from 'fs/promises';
+import { mkdir } from 'fs/promises';
+import { Prisma } from '@prisma/client';
 
 @UseGuards(JwtAuthGuard)
 @Controller('documents')
 export class DocumentsController {
+  private readonly logger = new Logger(DocumentsController.name);
   constructor(private readonly documentsService: DocumentsService) {}
 
   @Post()
-  create(
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+    }),
+  )
+  async create(
+    @UploadedFile(
+      new ParseFilePipe({
+        validators: [
+          new MaxFileSizeValidator({ maxSize: 50000000 }),
+          new FileTypeValidator({ fileType: 'application/pdf' }),
+        ],
+      }),
+    )
+    file: Express.Multer.File,
+    @Body('title') title: string,
     @Request() req,
-    @Body(new ValidationPipe({ transform: true }))
-    createDocumentDto: CreateDocumentDto,
   ) {
-    const userId = parseInt(req.payload.sub);
-    const orgFileName =
-      createDocumentDto.filePath.split('/').pop() ?? 'UnknownFileName';
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const filename = `${uniqueSuffix}-${file.originalname}`;
+    const uploadDir = join(__dirname, '..', '..', '..', 'uploads');
+    // Ensure the directory exists before writing to it
+    await mkdir(uploadDir, { recursive: true });
+    const uploadPath = join(uploadDir, filename);
 
-    const documentData = {
-      ...createDocumentDto,
+    const userId = parseInt(req.payload.sub);
+
+    await fs.writeFile(uploadPath, file.buffer);
+    const fileToStore: Prisma.DocumentCreateInput = {
+      title: title,
+      originalFileName: file.originalname,
+      filePath: uploadPath,
+      mimeType: file.mimetype,
+      size: file.size,
       user: {
         connect: { id: userId },
       },
-      originalFileName: orgFileName,
     };
-    return this.documentsService.create(documentData);
+    return this.documentsService.create(fileToStore);
   }
 
   @Get()
@@ -55,14 +90,18 @@ export class DocumentsController {
     return this.documentsService.findOne(+id, userId);
   }
 
-  @Patch(':id')
+  @Patch('/title/:id')
   update(
     @Request() req,
     @Param('id') id: string,
     @Body(ValidationPipe) updateDocumentDto: UpdateDocumentDto,
   ) {
     const userId = parseInt(req.payload.sub);
-    return this.documentsService.update(+id, userId, updateDocumentDto);
+    return this.documentsService.updateTitle(
+      +id,
+      userId,
+      updateDocumentDto.title,
+    );
   }
 
   @Delete(':id')

@@ -57,11 +57,7 @@ export class DocumentsService {
     }
   }
 
-  async update(
-    id: number,
-    userId: number,
-    updateDocumentDto: Prisma.DocumentUpdateInput,
-  ) {
+  async updateTitle(id: number, userId: number, newTitle: string) {
     try {
       const document = await this.databaseService.document.findUnique({
         where: {
@@ -80,7 +76,7 @@ export class DocumentsService {
         where: {
           id: id,
         },
-        data: updateDocumentDto,
+        data: { ...document, title: newTitle },
         select: {
           title: true,
           originalFileName: true,
