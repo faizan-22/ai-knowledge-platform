@@ -2,6 +2,16 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 
+const documentSelect = {
+  id: true,
+  title: true,
+  originalFileName: true,
+  filePath: true,
+  mimeType: true,
+  size: true,
+  status: true,
+};
+
 @Injectable()
 export class DocumentsService {
   private readonly logger = new Logger(DocumentsService.name);
@@ -23,14 +33,7 @@ export class DocumentsService {
         where: {
           userId: userId,
         },
-        select: {
-          title: true,
-          originalFileName: true,
-          filePath: true,
-          mimeType: true,
-          size: true,
-          status: true,
-        },
+        select: documentSelect,
       });
     } catch (err) {
       this.logger.error(err);
@@ -39,18 +42,12 @@ export class DocumentsService {
 
   async findOne(id: number, userId: number) {
     try {
-      return await this.databaseService.document.findMany({
+      return await this.databaseService.document.findUnique({
         where: {
           id: id,
           userId: userId,
         },
-        select: {
-          title: true,
-          originalFileName: true,
-          filePath: true,
-          size: true,
-          status: true,
-        },
+        select: documentSelect,
       });
     } catch (err) {
       this.logger.error(err);
@@ -77,13 +74,7 @@ export class DocumentsService {
           id: id,
         },
         data: { ...document, title: newTitle },
-        select: {
-          title: true,
-          originalFileName: true,
-          filePath: true,
-          size: true,
-          status: true,
-        },
+        select: documentSelect,
       });
 
       return updatedDocument;
@@ -111,13 +102,7 @@ export class DocumentsService {
         where: {
           id: id,
         },
-        select: {
-          title: true,
-          originalFileName: true,
-          filePath: true,
-          size: true,
-          status: true,
-        },
+        select: documentSelect,
       });
 
       return deletedDocument;

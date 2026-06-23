@@ -4,6 +4,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 
+const userSelect = {
+  id: true,
+  name: true,
+  email: true,
+};
+
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
@@ -12,11 +18,7 @@ export class UsersService {
   async findAll(): Promise<any> {
     try {
       return await this.databaseService.user.findMany({
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
+        select: userSelect,
       });
     } catch (err) {
       this.logger.error(err);
@@ -29,11 +31,7 @@ export class UsersService {
         where: {
           id: userId,
         },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
+        select: userSelect,
       });
     } catch (err) {
       this.logger.error(err);
@@ -50,11 +48,7 @@ export class UsersService {
           id: userId,
         },
         data: updateUserDto,
-        select: {
-          id: true,
-          name: true,
-          email: true,
-        },
+        select: userSelect,
       });
     } catch (err) {
       this.logger.error(err);
@@ -67,6 +61,7 @@ export class UsersService {
         where: {
           id: userId,
         },
+        select: userSelect,
       });
     } catch (err) {
       this.logger.error(err);

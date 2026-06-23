@@ -29,16 +29,38 @@ import { join } from 'path';
 import * as fs from 'fs/promises';
 import { mkdir } from 'fs/promises';
 import { Prisma } from '@prisma/client';
-import { ApiOAuth2 } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiOAuth2, ApiOperation } from '@nestjs/swagger';
+import { PdfParserService } from 'src/pdf-parser/pdf-parser.service';
 
 @ApiOAuth2([], 'oauth2-login')
 @UseGuards(JwtAuthGuard)
 @Controller('documents')
 export class DocumentsController {
   private readonly logger = new Logger(DocumentsController.name);
-  constructor(private readonly documentsService: DocumentsService) {}
+  constructor(
+    private readonly documentsService: DocumentsService,
+    private readonly pdfParserService: PdfParserService,
+  ) {}
 
   @Post()
+  @ApiOperation({ summary: 'Upload a local file' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          // This key must match the string inside FileInterceptor
+          type: 'string',
+          format: 'binary',
+        },
+        title: {
+          type: 'string',
+          description: 'title of the document',
+        },
+      },
+    },
+  })
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -54,12 +76,12 @@ export class DocumentsController {
       }),
     )
     file: Express.Multer.File,
-    @Body('title') title: string,
+    @Body(ValidationPipe) createDocumentDto: UpdateDocumentDto,
     @Request() req,
   ) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
     const filename = `${uniqueSuffix}-${file.originalname}`;
-    const uploadDir = join(__dirname, '..', '..', '..', 'uploads');
+    const uploadDir = join(process.cwd(), 'uploads');
     // Ensure the directory exists before writing to it
     await mkdir(uploadDir, { recursive: true });
     const uploadPath = join(uploadDir, filename);
@@ -67,10 +89,16 @@ export class DocumentsController {
     const userId = parseInt(req.payload.sub);
 
     await fs.writeFile(uploadPath, file.buffer);
+
+    const data = await this.pdfParserService.parsePdf(filename);
+
+    this.logger.log(data?.info);
+    this.logger.log(data?.text);
+
     const fileToStore: Prisma.DocumentCreateInput = {
-      title: title,
+      title: createDocumentDto.title,
       originalFileName: file.originalname,
-      filePath: uploadPath,
+      filePath: filename,
       mimeType: file.mimetype,
       size: file.size,
       user: {
