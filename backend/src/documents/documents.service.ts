@@ -21,6 +21,7 @@ export class DocumentsService {
     try {
       return await this.databaseService.document.create({
         data: createDocumentDto,
+        select: documentSelect,
       });
     } catch (err) {
       this.logger.error(err);
@@ -74,6 +75,39 @@ export class DocumentsService {
           id: id,
         },
         data: { ...document, title: newTitle },
+        select: documentSelect,
+      });
+
+      return updatedDocument;
+    } catch (err) {
+      this.logger.error(err);
+    }
+  }
+
+  async updateStatus(
+    id: number,
+    userId: number,
+    newStatus: 'UPLOADED' | 'PROCESSING' | 'READY' | 'FAILED',
+  ) {
+    try {
+      const document = await this.databaseService.document.findUnique({
+        where: {
+          id: id,
+        },
+        select: { userId: true },
+      });
+
+      if (!document) throw new Error('Task Not Found');
+
+      if (document.userId != userId) {
+        throw new Error('You cannot access this task');
+      }
+
+      const updatedDocument = await this.databaseService.document.update({
+        where: {
+          id: id,
+        },
+        data: { ...document, status: newStatus },
         select: documentSelect,
       });
 

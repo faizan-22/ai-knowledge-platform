@@ -30,7 +30,7 @@ import * as fs from 'fs/promises';
 import { mkdir } from 'fs/promises';
 import { Prisma } from '@prisma/client';
 import { ApiBody, ApiConsumes, ApiOAuth2, ApiOperation } from '@nestjs/swagger';
-import { PdfParserService } from 'src/pdf-parser/pdf-parser.service';
+import { DocumentProcessingService } from 'src/document-processing/document-processing.service';
 
 @ApiOAuth2([], 'oauth2-login')
 @UseGuards(JwtAuthGuard)
@@ -39,7 +39,7 @@ export class DocumentsController {
   private readonly logger = new Logger(DocumentsController.name);
   constructor(
     private readonly documentsService: DocumentsService,
-    private readonly pdfParserService: PdfParserService,
+    private readonly documentProcessingService: DocumentProcessingService,
   ) {}
 
   @Post()
@@ -90,11 +90,6 @@ export class DocumentsController {
 
     await fs.writeFile(uploadPath, file.buffer);
 
-    const data = await this.pdfParserService.parsePdf(filename);
-
-    this.logger.log(data?.info);
-    this.logger.log(data?.text);
-
     const fileToStore: Prisma.DocumentCreateInput = {
       title: createDocumentDto.title,
       originalFileName: file.originalname,
@@ -105,7 +100,15 @@ export class DocumentsController {
         connect: { id: userId },
       },
     };
-    return this.documentsService.create(fileToStore);
+    const retVal = await this.documentsService.create(fileToStore);
+
+    if (!retVal) throw Error('Document upload failed');
+
+    await this.documentsService.updateStatus(retVal.id, userId, 'PROCESSING');
+
+    await this.documentProcessingService.processDocument(filename, retVal.id);
+
+    return await this.documentsService.updateStatus(retVal.id, userId, 'READY');
   }
 
   @Get()

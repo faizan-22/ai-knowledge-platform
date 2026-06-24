@@ -4,16 +4,16 @@ import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './users/users.module';
-import { DocumentModule } from './documents/documents.module';
-import { PdfParserModule } from './pdf-parser/pdf-parser.module';
+import { DocumentsModule } from './documents/documents.module';
+import { DocumentProcessingModule } from './document-processing/document-processing.module';
 
 @Module({
   imports: [
     DatabaseModule,
     AuthModule,
     UserModule,
-    DocumentModule,
-    PdfParserModule,
+    DocumentsModule,
+    DocumentProcessingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
