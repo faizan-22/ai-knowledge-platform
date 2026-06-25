@@ -12,6 +12,14 @@ const documentSelect = {
   status: true,
 };
 
+const chunkSelect = {
+  id: true,
+  documentId: true,
+  chunkIndex: true,
+  pageNumber: true,
+  content: true,
+};
+
 @Injectable()
 export class DocumentsService {
   private readonly logger = new Logger(DocumentsService.name);
@@ -49,6 +57,32 @@ export class DocumentsService {
           userId: userId,
         },
         select: documentSelect,
+      });
+    } catch (err) {
+      this.logger.error(err);
+    }
+  }
+
+  async findChunks(id: number, userId: number) {
+    try {
+      const document = await this.databaseService.document.findUnique({
+        where: {
+          id: id,
+        },
+        select: { userId: true },
+      });
+
+      if (!document) throw new Error('Task Not Found');
+
+      if (document.userId != userId) {
+        throw new Error('You cannot access this task');
+      }
+
+      return await this.databaseService.documentChunk.findMany({
+        where: {
+          documentId: id,
+        },
+        select: chunkSelect,
       });
     } catch (err) {
       this.logger.error(err);

@@ -123,6 +123,12 @@ export class DocumentsController {
     return this.documentsService.findOne(+id, userId);
   }
 
+  @Get(':id/chunks')
+  findChunks(@Request() req, @Param('id') id: string) {
+    const userId = parseInt(req.payload.sub);
+    return this.documentsService.findChunks(+id, userId);
+  }
+
   @Patch('/title/:id')
   update(
     @Request() req,

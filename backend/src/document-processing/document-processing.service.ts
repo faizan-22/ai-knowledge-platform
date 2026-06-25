@@ -31,7 +31,6 @@ export class DocumentProcessingService {
           }
         }
       }
-
     } catch (err) {
       this.logger.error(err);
     }
