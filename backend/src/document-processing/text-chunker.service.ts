@@ -1,5 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
+import { EmbeddingsService } from './embeddings.service';
+import { PrismaClient } from '@prisma/client';
 
 @Injectable()
 export class TextChunkerService {
@@ -9,7 +11,10 @@ export class TextChunkerService {
   }
 
   private readonly logger = new Logger(TextChunkerService.name);
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly embeddingsService: EmbeddingsService,
+  ) {}
 
   async chunkText(
     pageContent: { page: number; text: string },
@@ -21,6 +26,7 @@ export class TextChunkerService {
       const CHUNK_OVERLAP = 200;
       const CHUNK_STEP = CHUNK_SIZE - CHUNK_OVERLAP;
       const sanitizedText = this.sanitizeText(pageContent.text);
+      const prisma = new PrismaClient();
 
       let ptr = 0;
       let chunkIndex = chunkStartIndex;
@@ -28,7 +34,7 @@ export class TextChunkerService {
       while (ptr < sanitizedText.length) {
         const chunk = sanitizedText.substring(ptr, ptr + CHUNK_SIZE);
 
-        await this.databaseService.documentChunk.create({
+        const { id } = await this.databaseService.documentChunk.create({
           data: {
             chunkIndex,
             content: chunk,
@@ -36,6 +42,16 @@ export class TextChunkerService {
             document: { connect: { id: documentId } },
           },
         });
+
+        const embeddingVector =
+          await this.embeddingsService.generateEmbeddings(chunk);
+        const vectorString = `[${embeddingVector.join(',')}]`;
+
+        await prisma.$executeRaw`
+          UPDATE "DocumentChunk"
+          SET "embedding" = ${vectorString}::vector
+          WHERE "id" = ${id};
+        `;
 
         chunkIndex += 1;
         ptr += CHUNK_STEP;

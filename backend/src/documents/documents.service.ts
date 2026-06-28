@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 
 const documentSelect = {
@@ -65,6 +65,7 @@ export class DocumentsService {
 
   async findChunks(id: number, userId: number) {
     try {
+      const prisma = new PrismaClient();
       const document = await this.databaseService.document.findUnique({
         where: {
           id: id,
@@ -78,12 +79,27 @@ export class DocumentsService {
         throw new Error('You cannot access this task');
       }
 
-      return await this.databaseService.documentChunk.findMany({
-        where: {
-          documentId: id,
-        },
-        select: chunkSelect,
-      });
+      const chunks = await prisma.$queryRaw<any[]>`
+      SELECT
+        id,
+        content,
+        "pageNumber",
+        "documentId",
+        "createdAt",
+        "embedding"::text AS "embeddingString"
+        FROM "DocumentChunk"
+        WHERE "documentId" = ${id};
+      `;
+
+      return chunks.map(({ embeddingString, ...chunk }) => ({
+        ...chunk,
+        embedding: embeddingString
+          ? embeddingString
+              .replace(/[\[\]]/g, '')
+              .split(',')
+              .map(Number)
+          : null,
+      }));
     } catch (err) {
       this.logger.error(err);
     }
