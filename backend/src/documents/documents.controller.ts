@@ -104,11 +104,11 @@ export class DocumentsController {
 
     if (!retVal) throw Error('Document upload failed');
 
-    await this.documentsService.updateStatus(retVal.id, userId, 'PROCESSING');
-
     await this.documentProcessingService.processDocument(filename, retVal.id);
 
-    return await this.documentsService.updateStatus(retVal.id, userId, 'READY');
+    // Status may have been updated by processing; fetch fresh record before returning
+    const fresh = await this.documentsService.findOne(retVal.id, userId);
+    return fresh ?? retVal;
   }
 
   @Get()

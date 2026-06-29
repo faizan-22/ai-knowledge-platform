@@ -12,14 +12,6 @@ const documentSelect = {
   status: true,
 };
 
-const chunkSelect = {
-  id: true,
-  documentId: true,
-  chunkIndex: true,
-  pageNumber: true,
-  content: true,
-};
-
 @Injectable()
 export class DocumentsService {
   private readonly logger = new Logger(DocumentsService.name);
@@ -65,7 +57,6 @@ export class DocumentsService {
 
   async findChunks(id: number, userId: number) {
     try {
-      const prisma = new PrismaClient();
       const document = await this.databaseService.document.findUnique({
         where: {
           id: id,
@@ -79,7 +70,7 @@ export class DocumentsService {
         throw new Error('You cannot access this task');
       }
 
-      const chunks = await prisma.$queryRaw<any[]>`
+      const chunks = await this.databaseService.$queryRaw<any[]>`
       SELECT
         id,
         content,
@@ -125,39 +116,6 @@ export class DocumentsService {
           id: id,
         },
         data: { ...document, title: newTitle },
-        select: documentSelect,
-      });
-
-      return updatedDocument;
-    } catch (err) {
-      this.logger.error(err);
-    }
-  }
-
-  async updateStatus(
-    id: number,
-    userId: number,
-    newStatus: 'UPLOADED' | 'PROCESSING' | 'READY' | 'FAILED',
-  ) {
-    try {
-      const document = await this.databaseService.document.findUnique({
-        where: {
-          id: id,
-        },
-        select: { userId: true },
-      });
-
-      if (!document) throw new Error('Task Not Found');
-
-      if (document.userId != userId) {
-        throw new Error('You cannot access this task');
-      }
-
-      const updatedDocument = await this.databaseService.document.update({
-        where: {
-          id: id,
-        },
-        data: { ...document, status: newStatus },
         select: documentSelect,
       });
 
