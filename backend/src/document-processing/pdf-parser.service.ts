@@ -18,7 +18,11 @@ export class PdfParserService {
     };
 
     const textContent = await pageData.getTextContent(renderOptions);
-    const text = textContent.items.map((item: any) => item.str).join(' ');
+    this.logger.log(textContent.items);
+    const text = textContent.items
+      .map((item: any) => item.str)
+      .join(' ')
+      .trim();
     pageTexts.push({ page: pageData.pageNumber, text });
     return text;
   }

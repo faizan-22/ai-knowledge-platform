@@ -31,6 +31,8 @@ export class DocumentProcessingService {
       const pdfContent: { page: number; text: string }[] | undefined =
         await this.pdfParserService.parsePdf(fileName);
 
+      this.logger.log(pdfContent);
+
       let allChunks: { content: string; pageNumber: number }[] = [];
 
       // Chunk the document page-wise

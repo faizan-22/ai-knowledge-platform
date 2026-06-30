@@ -6,6 +6,10 @@ import { AuthModule } from './auth/auth.module';
 import { UserModule } from './users/users.module';
 import { DocumentsModule } from './documents/documents.module';
 import { DocumentProcessingModule } from './document-processing/document-processing.module';
+import { RetrievalService } from './retrieval/retrieval.service';
+import { RetrievalModule } from './retrieval/retrieval.module';
+import { ChatModule } from './chat/chat.module';
+import { DevtoolsModule } from '@nestjs/devtools-integration';
 
 @Module({
   imports: [
@@ -14,8 +18,10 @@ import { DocumentProcessingModule } from './document-processing/document-process
     UserModule,
     DocumentsModule,
     DocumentProcessingModule,
+    RetrievalModule,
+    ChatModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, RetrievalService],
 })
 export class AppModule {}

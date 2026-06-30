@@ -12,7 +12,7 @@ import { EmbeddingsService } from './embeddings.service';
     TextChunkerService,
     EmbeddingsService,
   ],
-  exports: [DocumentProcessingService],
+  exports: [DocumentProcessingService, EmbeddingsService],
   imports: [DatabaseModule],
 })
 export class DocumentProcessingModule {}

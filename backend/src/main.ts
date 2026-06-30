@@ -7,6 +7,13 @@ async function bootstrap() {
   if (!process.env.SECRET) {
     throw new Error('SECRET is required!');
   }
+  if (!process.env.NODE_ENV) {
+    throw new Error('NODE_ENV is required!');
+  }
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL is required!');
+  }
+
   const app = await NestFactory.create(AppModule, {
     logger: new ConsoleLogger({
       prefix: 'AI-KNOWLEDGE-PLATFORM',

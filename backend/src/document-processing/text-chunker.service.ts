@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { EmbeddingsService } from './embeddings.service';
 
 @Injectable()
 export class TextChunkerService {
