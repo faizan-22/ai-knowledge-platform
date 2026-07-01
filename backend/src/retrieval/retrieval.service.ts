@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
-import { EmbeddingsService } from 'src/document-processing/embeddings.service';
+import { OpenAiService } from 'src/open-ai/open-ai.service';
 
 export type RetrievedChunk = {
   id: number;
@@ -15,7 +15,7 @@ export class RetrievalService {
   private readonly logger = new Logger(RetrievalService.name);
   constructor(
     private readonly databaseService: DatabaseService,
-    private readonly embeddingsService: EmbeddingsService,
+    private readonly openAiService: OpenAiService,
   ) {}
 
   async retrieveChunks(
@@ -24,25 +24,23 @@ export class RetrievalService {
     query: string,
     topK = 5,
   ): Promise<RetrievedChunk[]> {
-    try {
-      const document = await this.databaseService.document.findUnique({
-        where: {
-          userId,
-          id: targetDocumentId,
-        },
-      });
+    const document = await this.databaseService.document.findUnique({
+      where: {
+        userId,
+        id: targetDocumentId,
+      },
+    });
 
-      if (!document) {
-        throw new NotFoundException('Document not found');
-      }
+    if (!document) {
+      throw new NotFoundException('Document not found!');
+    }
 
-      const queryEmbedding =
-        await this.embeddingsService.generateEmbeddings(query);
-      const vectorString = `[${queryEmbedding.join(',')}]`;
+    const queryEmbedding = await this.openAiService.generateEmbeddings(query);
+    const vectorString = `[${queryEmbedding.join(',')}]`;
 
-      const matchedChunks = await this.databaseService.$queryRaw<
-        RetrievedChunk[]
-      >`
+    const matchedChunks = await this.databaseService.$queryRaw<
+      RetrievedChunk[]
+    >`
         SELECT
         id, 
         content, 
@@ -55,10 +53,6 @@ export class RetrievalService {
         LIMIT ${topK};
       `;
 
-      return matchedChunks;
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return matchedChunks;
   }
 }

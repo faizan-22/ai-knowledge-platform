@@ -22,29 +22,25 @@ export class JwtAuthGuard implements CanActivate {
     const request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
     if (!token) {
-      throw new Error('Bearer token not present!');
+      throw new UnauthorizedException('Bearer token not present!');
     }
-    try {
-      // 💡 Here the JWT secret key that's used for verifying the payload
-      // is the key that was passed in the JwtModule
-      const payload = await this.jwtService.verifyAsync(token);
-      // 💡 We're assigning the payload to the request object here
-      // so that we can access it in our route handlers
+    // 💡 Here the JWT secret key that's used for verifying the payload
+    // is the key that was passed in the JwtModule
+    const payload = await this.jwtService.verifyAsync(token);
+    // 💡 We're assigning the payload to the request object here
+    // so that we can access it in our route handlers
 
-      const userExists = await this.databaseService.user.findUnique({
-        where: {
-          id: Number(payload.sub),
-        },
-      });
+    const userExists = await this.databaseService.user.findUnique({
+      where: {
+        id: Number(payload.sub),
+      },
+    });
 
-      // If the user was deleted, block the request instantly
-      if (!userExists) {
-        throw new Error('User account no longer exists');
-      }
-      request['payload'] = payload;
-    } catch (err) {
-      throw new UnauthorizedException(err);
+    // If the user was deleted, block the request instantly
+    if (!userExists) {
+      throw new UnauthorizedException('User account no longer exists');
     }
+    request['payload'] = payload;
     return true;
   }
 

@@ -3,16 +3,14 @@ import { PdfParserService } from './pdf-parser.service';
 import { DocumentProcessingService } from './document-processing.service';
 import { DatabaseModule } from 'src/database/database.module';
 import { TextChunkerService } from './text-chunker.service';
-import { EmbeddingsService } from './embeddings.service';
-
+import { OpenAiModule } from 'src/open-ai/open-ai.module';
 @Module({
   providers: [
     PdfParserService,
     DocumentProcessingService,
     TextChunkerService,
-    EmbeddingsService,
   ],
-  exports: [DocumentProcessingService, EmbeddingsService],
-  imports: [DatabaseModule],
+  exports: [DocumentProcessingService],
+  imports: [DatabaseModule, OpenAiModule],
 })
 export class DocumentProcessingModule {}

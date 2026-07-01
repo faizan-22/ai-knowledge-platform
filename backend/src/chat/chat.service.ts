@@ -1,4 +1,5 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { OpenAiService } from 'src/open-ai/open-ai.service';
 import {
   RetrievalService,
   type RetrievedChunk,
@@ -7,50 +8,40 @@ import {
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
-  constructor(private readonly retrievalService: RetrievalService) {}
+  constructor(
+    private readonly retrievalService: RetrievalService,
+    private readonly openAiService: OpenAiService,
+  ) {}
 
   async createAndSendChat(userId: number, documentId: number, query: string) {
-    try {
-      const relevantChunks: RetrievedChunk[] =
-        await this.retrievalService.retrieveChunks(
-          userId,
-          documentId,
-          query,
-          3,
+    const parsedTopK = Number(process.env.TOP_K);
+    const topK =
+      Number.isInteger(parsedTopK) && parsedTopK > 0 && parsedTopK <= 20
+        ? parsedTopK
+        : 3;
+
+    const relevantChunks: RetrievedChunk[] =
+      await this.retrievalService.retrieveChunks(
+        userId,
+        documentId,
+        query,
+        topK,
+      );
+
+    this.logger.log(`Retrieved ${topK} chunks`);
+
+    if (!relevantChunks || relevantChunks.length == 0)
+      throw new NotFoundException('Relevant data not found!');
+
+    const context = relevantChunks
+      .map((chunk, i) => {
+        this.logger.log(
+          `[Source ${i + 1} - Page ${chunk.pageNumber} - Distance ${chunk.distance}]`,
         );
+        return `[Source ${i + 1} - Page ${chunk.pageNumber}]\n${chunk.content}`;
+      })
+      .join('\n\n---\n\n');
 
-      if (!relevantChunks || relevantChunks.length == 0)
-        throw new NotFoundException('Relevant data not found!');
-
-      const context = relevantChunks
-        .map(
-          (chunk, i) =>
-            `[Source ${i + 1} - Page ${chunk.pageNumber}]\n${chunk.content}`,
-        )
-        .join('\n\n---\n\n');
-
-      const prompt = `
-      You are an assistant answering questions using only the provided document context.
-
-      Rules:
-      - Use only the context below.
-      - If the context does not contain the answer, say: "I couldn't find that information in the document."
-      - Do not make assumptions or use outside knowledge.
-      - Keep the answer concise.
-
-      Context:
-      ${context}
-
-      Question:
-      ${query}
-
-      Answer:
-      `;
-
-      return prompt;
-    } catch (err) {
-      this.logger.error(err);
-      throw err;
-    }
+    return this.openAiService.generateAnswers(context, query);
   }
 }

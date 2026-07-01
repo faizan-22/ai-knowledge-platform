@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { DatabaseModule } from './database/database.module';
@@ -9,7 +9,12 @@ import { DocumentProcessingModule } from './document-processing/document-process
 import { RetrievalService } from './retrieval/retrieval.service';
 import { RetrievalModule } from './retrieval/retrieval.module';
 import { ChatModule } from './chat/chat.module';
-import { DevtoolsModule } from '@nestjs/devtools-integration';
+import { OpenAiModule } from './open-ai/open-ai.module';
+import { LoggerMiddleware } from './common/middlewares/logger.middleware';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { CatchExceptionFilter } from './common/exception/exception.filter';
 
 @Module({
   imports: [
@@ -20,8 +25,28 @@ import { DevtoolsModule } from '@nestjs/devtools-integration';
     DocumentProcessingModule,
     RetrievalModule,
     ChatModule,
+    OpenAiModule,
   ],
   controllers: [AppController],
-  providers: [AppService, RetrievalService],
+  providers: [
+    AppService,
+    RetrievalService,
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: TransformInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: CatchExceptionFilter,
+    },
+  ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}

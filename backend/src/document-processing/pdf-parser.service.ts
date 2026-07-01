@@ -28,19 +28,15 @@ export class PdfParserService {
   }
 
   async parsePdf(fileName: string) {
-    try {
-      const filePath = join(process.cwd(), 'uploads', fileName);
-      const fileBuffer = await fs.readFile(filePath);
+    const filePath = join(process.cwd(), 'uploads', fileName);
+    const fileBuffer = await fs.readFile(filePath);
 
-      const pageTexts: { page: number; text: string }[] = [];
+    const pageTexts: { page: number; text: string }[] = [];
 
-      await pdfParse(fileBuffer, {
-        verbosityLevel: 0,
-        pagerender: (pageData) => this.customPageRenderer(pageData, pageTexts),
-      });
-      return pageTexts;
-    } catch (err) {
-      this.logger.error(err);
-    }
+    await pdfParse(fileBuffer, {
+      verbosityLevel: 0,
+      pagerender: (pageData) => this.customPageRenderer(pageData, pageTexts),
+    });
+    return pageTexts;
   }
 }

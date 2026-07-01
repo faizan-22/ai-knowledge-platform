@@ -5,6 +5,7 @@ import { LoginDto } from './dto/login.dto';
 import { AuthService } from './auth.service';
 import { SignUpDto } from './dto/sign-up.dto';
 import { ApiConsumes, ApiExcludeEndpoint } from '@nestjs/swagger';
+import { SkipTransform } from 'src/common/decorators/skip-transform.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -23,6 +24,7 @@ export class AuthController {
   // B. The new endpoint dedicated ONLY to the global Swagger lock icon
   @ApiExcludeEndpoint() // 👈 Hides this helper route from cluttering your Swagger UI list
   @ApiConsumes('application/x-www-form-urlencoded')
+  @SkipTransform()
   @Post('/swagger-login')
   async swaggerLogin(@Body() body: any) {
     // 👈 Using 'any' bypasses the strict ValidationPipe

@@ -16,55 +16,39 @@ export class UsersService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   async findAll(): Promise<any> {
-    try {
-      return await this.databaseService.user.findMany({
-        select: userSelect,
-      });
-    } catch (err) {
-      this.logger.error(err);
-    }
+    return await this.databaseService.user.findMany({
+      select: userSelect,
+    });
   }
 
   async findOne(userId: number): Promise<any> {
-    try {
-      return await this.databaseService.user.findUnique({
-        where: {
-          id: userId,
-        },
-        select: userSelect,
-      });
-    } catch (err) {
-      this.logger.error(err);
-    }
+    return await this.databaseService.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: userSelect,
+    });
   }
 
   async update(
     userId: number,
     updateUserDto: Prisma.UserUpdateInput,
   ): Promise<any> {
-    try {
-      return await this.databaseService.user.update({
-        where: {
-          id: userId,
-        },
-        data: updateUserDto,
-        select: userSelect,
-      });
-    } catch (err) {
-      this.logger.error(err);
-    }
+    return await this.databaseService.user.update({
+      where: {
+        id: userId,
+      },
+      data: updateUserDto,
+      select: userSelect,
+    });
   }
 
   async remove(userId: number): Promise<any> {
-    try {
-      return await this.databaseService.user.delete({
-        where: {
-          id: userId,
-        },
-        select: userSelect,
-      });
-    } catch (err) {
-      this.logger.error(err);
-    }
+    return await this.databaseService.user.delete({
+      where: {
+        id: userId,
+      },
+      select: userSelect,
+    });
   }
 }

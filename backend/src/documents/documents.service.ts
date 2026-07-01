@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { DatabaseService } from 'src/database/database.service';
 
@@ -18,59 +18,50 @@ export class DocumentsService {
   constructor(private readonly databaseService: DatabaseService) {}
 
   async create(createDocumentDto: Prisma.DocumentCreateInput) {
-    try {
-      return await this.databaseService.document.create({
-        data: createDocumentDto,
-        select: documentSelect,
-      });
-    } catch (err) {
-      this.logger.error(err);
-    }
+    return await this.databaseService.document.create({
+      data: createDocumentDto,
+      select: documentSelect,
+    });
   }
 
   async findAll(userId: number) {
-    try {
-      return await this.databaseService.document.findMany({
-        where: {
-          userId: userId,
-        },
-        select: documentSelect,
-      });
-    } catch (err) {
-      this.logger.error(err);
-    }
+    return await this.databaseService.document.findMany({
+      where: {
+        userId: userId,
+      },
+      select: documentSelect,
+    });
   }
 
   async findOne(id: number, userId: number) {
-    try {
-      return await this.databaseService.document.findUnique({
-        where: {
-          id: id,
-          userId: userId,
-        },
-        select: documentSelect,
-      });
-    } catch (err) {
-      this.logger.error(err);
-    }
+    const document = await this.databaseService.document.findUnique({
+      where: {
+        id: id,
+        userId: userId,
+      },
+      select: documentSelect,
+    });
+
+    if (!document) throw new NotFoundException('Document Not Found!');
+
+    return document;
   }
 
   async findChunks(id: number, userId: number) {
-    try {
-      const document = await this.databaseService.document.findUnique({
-        where: {
-          id: id,
-        },
-        select: { userId: true },
-      });
+    const document = await this.databaseService.document.findUnique({
+      where: {
+        id: id,
+      },
+      select: { userId: true },
+    });
 
-      if (!document) throw new Error('Task Not Found');
+    if (!document) throw new NotFoundException('Document Not Found!');
 
-      if (document.userId != userId) {
-        throw new Error('You cannot access this task');
-      }
+    if (document.userId != userId) {
+      throw new NotFoundException('Document Not Found!');
+    }
 
-      const chunks = await this.databaseService.$queryRaw<any[]>`
+    const chunks = await this.databaseService.$queryRaw<any[]>`
       SELECT
         id,
         content,
@@ -82,74 +73,63 @@ export class DocumentsService {
         WHERE "documentId" = ${id};
       `;
 
-      return chunks.map(({ embeddingString, ...chunk }) => ({
-        ...chunk,
-        embedding: embeddingString
-          ? embeddingString
-              .replace(/[\[\]]/g, '')
-              .split(',')
-              .map(Number)
-          : null,
-      }));
-    } catch (err) {
-      this.logger.error(err);
-    }
+    return chunks.map(({ embeddingString, ...chunk }) => ({
+      ...chunk,
+      embedding: embeddingString
+        ? embeddingString
+            .replace(/[\[\]]/g, '')
+            .split(',')
+            .map(Number)
+        : null,
+    }));
   }
 
   async updateTitle(id: number, userId: number, newTitle: string) {
-    try {
-      const document = await this.databaseService.document.findUnique({
-        where: {
-          id: id,
-        },
-        select: { userId: true },
-      });
+    const document = await this.databaseService.document.findUnique({
+      where: {
+        id: id,
+      },
+      select: { userId: true },
+    });
 
-      if (!document) throw new Error('Task Not Found');
+    if (!document) throw new NotFoundException('Document Not Found!');
 
-      if (document.userId != userId) {
-        throw new Error('You cannot access this task');
-      }
-
-      const updatedDocument = await this.databaseService.document.update({
-        where: {
-          id: id,
-        },
-        data: { ...document, title: newTitle },
-        select: documentSelect,
-      });
-
-      return updatedDocument;
-    } catch (err) {
-      this.logger.error(err);
+    if (document.userId != userId) {
+      throw new NotFoundException('Document Not Found!');
     }
+
+    const updatedDocument = await this.databaseService.document.update({
+      where: {
+        id: id,
+      },
+      data: { ...document, title: newTitle },
+      select: documentSelect,
+    });
+
+    return updatedDocument;
   }
 
   async remove(id: number, userId: number) {
-    try {
-      const document = await this.databaseService.document.findUnique({
-        where: {
-          id: id,
-        },
-        select: { userId: true },
-      });
+    const document = await this.databaseService.document.findUnique({
+      where: {
+        id: id,
+      },
+      select: { userId: true },
+    });
 
-      if (!document) throw new Error('Task Not Found');
+    if (!document) throw new NotFoundException('Document Not Found!');
 
-      if (document.userId != userId) {
-        throw new Error('You cannot access this task');
-      }
-
-      const deletedDocument = this.databaseService.document.delete({
-        where: {
-          id: id,
-        },
-        select: documentSelect,
-      });
-
-      return deletedDocument;
-    } catch (err) {
-      this.logger.error(err);
+    if (document.userId != userId) {
+      throw new NotFoundException('Document Not Found!');
     }
+
+    const deletedDocument = this.databaseService.document.delete({
+      where: {
+        id: id,
+      },
+      select: documentSelect,
+    });
+
+    return deletedDocument;
   }
 }

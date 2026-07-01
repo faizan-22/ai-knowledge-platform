@@ -10,36 +10,32 @@ export class TextChunkerService {
   private readonly logger = new Logger(TextChunkerService.name);
 
   async chunkText(pageContent: { page: number; text: string }) {
-    try {
-      const CHUNK_SIZE = 900;
-      const CHUNK_OVERLAP = 200;
-      const CHUNK_STEP = CHUNK_SIZE - CHUNK_OVERLAP;
-      const sanitizedText = this.sanitizeText(pageContent.text);
+    const CHUNK_SIZE = 900;
+    const CHUNK_OVERLAP = 200;
+    const CHUNK_STEP = CHUNK_SIZE - CHUNK_OVERLAP;
+    const sanitizedText = this.sanitizeText(pageContent.text);
 
-      const chunks: { content: string; pageNumber: number }[] = [];
-      let ptr = 0;
+    const chunks: { content: string; pageNumber: number }[] = [];
+    let ptr = 0;
 
-      while (ptr < sanitizedText.length) {
-        const chunk = sanitizedText.substring(ptr, ptr + CHUNK_SIZE);
+    while (ptr < sanitizedText.length) {
+      const chunk = sanitizedText.substring(ptr, ptr + CHUNK_SIZE);
 
-        chunks.push({
-          content: chunk,
-          pageNumber: pageContent.page,
-        });
+      chunks.push({
+        content: chunk,
+        pageNumber: pageContent.page,
+      });
 
-        ptr += CHUNK_STEP;
+      ptr += CHUNK_STEP;
 
-        if (
-          ptr < sanitizedText.length &&
-          sanitizedText.length - ptr <= CHUNK_OVERLAP
-        ) {
-          break;
-        }
+      if (
+        ptr < sanitizedText.length &&
+        sanitizedText.length - ptr <= CHUNK_OVERLAP
+      ) {
+        break;
       }
-
-      return chunks;
-    } catch (err) {
-      this.logger.error(err);
     }
+
+    return chunks;
   }
 }
