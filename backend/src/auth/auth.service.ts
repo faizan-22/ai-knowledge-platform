@@ -52,6 +52,8 @@ export class AuthService {
       access_token: token,
       token_type: 'bearer',
       message: `Logged in with ${user.email}`,
+      email: user.email,
+      name: user.name,
     };
   }
 
