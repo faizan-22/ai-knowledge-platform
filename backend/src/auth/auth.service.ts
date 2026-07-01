@@ -54,6 +54,7 @@ export class AuthService {
       message: `Logged in with ${user.email}`,
       email: user.email,
       name: user.name,
+      id: user.id,
     };
   }
 
