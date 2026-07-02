@@ -13,33 +13,27 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import {
-  LayoutDashboardIcon,
-  Brain,
-  MessageSquareText,
-} from "lucide-react"
-
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  pages: [
-    {
-      name: "Dashboard",
-      url: "#",
-      icon: <LayoutDashboardIcon />,
-    },
-    {
-      name: "Chat",
-      url: "#",
-      icon: <MessageSquareText />,
-    },
-  ],
-}
+import { LayoutDashboardIcon, Brain, MessageSquareText } from "lucide-react"
+import { useUserStore } from "@/stores/user.store"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const user = useUserStore((state)=>state.user)
+  console.log(`User = ${user}`)
+  const data = {
+    pages: [
+      {
+        name: "Dashboard",
+        url: "#",
+        icon: <LayoutDashboardIcon />,
+      },
+      {
+        name: "Chat",
+        url: "#",
+        icon: <MessageSquareText />,
+      },
+    ],
+  }
+
   return (
     <Sidebar collapsible="offcanvas" {...props}>
       <SidebarHeader>
@@ -63,7 +57,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavPages items={data.pages} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        {user ? <NavUser {...user} /> : null}
       </SidebarFooter>
     </Sidebar>
   )

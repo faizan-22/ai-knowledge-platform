@@ -1,24 +1,67 @@
 "use client"
 
 import * as React from "react"
-import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes"
 
-function ThemeProvider({
-  children,
-  ...props
-}: React.ComponentProps<typeof NextThemesProvider>) {
+type Theme = "light" | "dark"
+
+type ThemeContextValue = {
+  theme: Theme
+  resolvedTheme: Theme
+  setTheme: (theme: Theme) => void
+}
+
+const ThemeContext = React.createContext<ThemeContextValue | null>(null)
+
+function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setThemeState] = React.useState<Theme>(() => {
+    if (typeof window === "undefined") {
+      return "dark"
+    }
+
+    const storedTheme = window.localStorage.getItem("theme")
+
+    if (storedTheme === "light" || storedTheme === "dark") {
+      return storedTheme
+    }
+
+    return "dark"
+  })
+
+  const setTheme = React.useCallback((nextTheme: Theme) => {
+    setThemeState(nextTheme)
+    localStorage.setItem("theme", nextTheme)
+  }, [])
+
+  React.useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark")
+    document.documentElement.style.colorScheme = theme
+  }, [theme])
+
+  const value = React.useMemo(
+    () => ({
+      theme,
+      resolvedTheme: theme,
+      setTheme,
+    }),
+    [setTheme, theme]
+  )
+
   return (
-    <NextThemesProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-      {...props}
-    >
+    <ThemeContext.Provider value={value}>
       <ThemeHotkey />
       {children}
-    </NextThemesProvider>
+    </ThemeContext.Provider>
   )
+}
+
+function useTheme() {
+  const context = React.useContext(ThemeContext)
+
+  if (!context) {
+    throw new Error("useTheme must be used within a ThemeProvider")
+  }
+
+  return context
 }
 
 function isTypingTarget(target: EventTarget | null) {
@@ -47,7 +90,7 @@ function ThemeHotkey() {
         return
       }
 
-      if (event.key.toLowerCase() !== "d") {
+      if (typeof event.key !== "string" || event.key.toLowerCase() !== "d") {
         return
       }
 
@@ -68,4 +111,4 @@ function ThemeHotkey() {
   return null
 }
 
-export { ThemeProvider }
+export { ThemeProvider, useTheme }
