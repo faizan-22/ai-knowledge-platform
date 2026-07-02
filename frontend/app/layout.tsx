@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { Toaster } from "@/components/ui/sonner"
+import { UserStoreHydrator } from "@/components/user-store-hydrator"
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'})
 
@@ -32,6 +33,7 @@ export default function RootLayout({
     >
       <body>
         <ThemeProvider>
+          <UserStoreHydrator />
           <TooltipProvider>{children}</TooltipProvider>
           <Toaster />
         </ThemeProvider>

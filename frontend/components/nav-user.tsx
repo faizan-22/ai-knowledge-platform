@@ -40,7 +40,6 @@ export function NavUser(user: User) {
     .toUpperCase()
 
   function handleLogout() {
-    localStorage.removeItem("access_token")
     clearUser()
     handleSuccess('Logout Successful')
     router.push("/login")
