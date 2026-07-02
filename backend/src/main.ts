@@ -3,7 +3,6 @@ import { AppModule } from './app.module';
 import { ConsoleLogger } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { SpelunkerModule } from 'nestjs-spelunker';
-import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
   if (!process.env.SECRET) {
@@ -23,6 +22,8 @@ async function bootstrap() {
       compact: false,
     }),
   });
+
+  app.enableCors({ origin: 'http://localhost:3000' });
 
   if (process.env.NODE_ENV == 'dev') {
     // Scan the application modules
