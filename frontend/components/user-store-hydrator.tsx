@@ -2,14 +2,12 @@
 
 import { useEffect } from "react"
 
-import { useUserStore } from "@/stores/user.store"
+import { loadUserFromLocalStorage } from "@/controllers/auth.controller"
 
 export function UserStoreHydrator() {
-  const hydrateUser = useUserStore((state) => state.hydrateUser)
-
   useEffect(() => {
-    hydrateUser()
-  }, [hydrateUser])
+    loadUserFromLocalStorage()
+  }, [])
 
   return null
 }

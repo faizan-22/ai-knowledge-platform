@@ -1,5 +1,6 @@
 "use client"
 
+import { logoutController } from "@/controllers/auth.controller"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   DropdownMenu,
@@ -24,13 +25,11 @@ import {
   LogOutIcon,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useUserStore } from "@/stores/user.store"
 import { handleSuccess } from "@/lib/handle-toast"
 
 export function NavUser(user: User) {
   const { isMobile } = useSidebar()
   const router = useRouter()
-  const clearUser = useUserStore((state) => state.clearUser)
   const initials = user.name
     .trim()
     .split(/\s+/)
@@ -40,7 +39,7 @@ export function NavUser(user: User) {
     .toUpperCase()
 
   function handleLogout() {
-    clearUser()
+    logoutController()
     handleSuccess('Logout Successful')
     router.push("/login")
   }

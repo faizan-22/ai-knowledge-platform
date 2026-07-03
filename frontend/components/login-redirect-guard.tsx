@@ -1,6 +1,6 @@
 "use client"
 
-import { hasStoredSession, useUserStore } from "@/stores/user.store"
+import { loadUserFromLocalStorage } from "@/controllers/auth.controller"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -10,13 +10,11 @@ export function LoginRedirectGuard({
   children: React.ReactNode
 }) {
   const router = useRouter()
-  const hydrateUser = useUserStore((state) => state.hydrateUser)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
 
   useEffect(() => {
     function checkAuth() {
-      if (hasStoredSession()) {
-        hydrateUser()
+      if (loadUserFromLocalStorage()) {
         router.replace("/dashboard")
         return
       }
@@ -25,7 +23,7 @@ export function LoginRedirectGuard({
     }
 
     checkAuth()
-  }, [hydrateUser, router])
+  }, [router])
 
   if (isCheckingAuth) {
     return (

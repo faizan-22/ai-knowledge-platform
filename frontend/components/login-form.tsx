@@ -16,10 +16,9 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { loginController } from "@/controllers/auth.controller"
 import { useRouter } from "next/navigation"
-import { ACCESS_TOKEN_STORAGE_KEY, useUserStore } from "@/stores/user.store"
 import { useState } from "react"
-import { loginUser } from "@/services/auth.service"
 import { handleApiError, handleSuccess } from "@/lib/handle-toast"
 import { EyeIcon, EyeOffIcon } from "lucide-react"
 
@@ -28,7 +27,6 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const router = useRouter()
-  const setUser = useUserStore((state) => state.setUser)
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -40,17 +38,10 @@ export function LoginForm({
     setIsLoading(true)
 
     try {
-      const response = await loginUser({
+      const response = await loginController({
         email,
         password,
       })
-
-      setUser({
-        name: response.data.name,
-        email: response.data.email,
-        id: String(response.data.id),
-      })
-      localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, response.data.access_token)
 
       handleSuccess(response.data.message)
 

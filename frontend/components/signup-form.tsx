@@ -15,9 +15,9 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { signupController } from "@/controllers/auth.controller"
 import { handleApiError, handleSuccess } from "@/lib/handle-toast"
 import { cn } from "@/lib/utils"
-import { signUp } from "@/services/auth.service"
 import { EyeIcon, EyeOffIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -48,7 +48,7 @@ export function SignupForm({
         return
       }
 
-      await signUp({
+      await signupController({
         name,
         email,
         password,
