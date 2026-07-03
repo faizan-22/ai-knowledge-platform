@@ -1,9 +1,10 @@
 import { User, UserState } from "@/types/user.types"
 import { create } from "zustand"
 
-const USER_STORAGE_KEY = "user"
+export const USER_STORAGE_KEY = "user"
+export const ACCESS_TOKEN_STORAGE_KEY = "access_token"
 
-function getStoredUser(): User | null {
+export function getStoredUser(): User | null {
   if (typeof window === "undefined") {
     return null
   }
@@ -22,6 +23,16 @@ function getStoredUser(): User | null {
   }
 }
 
+export function hasStoredSession() {
+  if (typeof window === "undefined") {
+    return false
+  }
+
+  return Boolean(
+    localStorage.getItem(ACCESS_TOKEN_STORAGE_KEY) && getStoredUser()
+  )
+}
+
 export const useUserStore = create<UserState>((set) => ({
   user: null,
 
@@ -32,11 +43,13 @@ export const useUserStore = create<UserState>((set) => ({
 
   clearUser: () => {
     localStorage.removeItem(USER_STORAGE_KEY)
-    localStorage.removeItem("access_token")
+    localStorage.removeItem(ACCESS_TOKEN_STORAGE_KEY)
     set({ user: null })
   },
 
   hydrateUser: () => {
-    set({ user: getStoredUser() })
+    const user = getStoredUser()
+    set({ user })
+    return user
   },
 }))

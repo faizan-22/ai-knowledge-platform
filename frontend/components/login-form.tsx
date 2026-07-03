@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { useRouter } from "next/navigation"
-import { useUserStore } from "@/stores/user.store"
+import { ACCESS_TOKEN_STORAGE_KEY, useUserStore } from "@/stores/user.store"
 import { useState } from "react"
 import { loginUser } from "@/services/auth.service"
 import { handleApiError, handleSuccess } from "@/lib/handle-toast"
@@ -50,11 +50,11 @@ export function LoginForm({
         email: response.data.email,
         id: String(response.data.id),
       })
-      localStorage.setItem("access_token", response.data.access_token)
+      localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, response.data.access_token)
 
       handleSuccess(response.data.message)
 
-      router.push("/dashboard")
+      router.replace("/dashboard")
     } catch (error) {
       handleApiError(error, "Unable to login. Please try again.")
     } finally {

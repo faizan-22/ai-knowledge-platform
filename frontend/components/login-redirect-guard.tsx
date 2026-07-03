@@ -4,32 +4,30 @@ import { hasStoredSession, useUserStore } from "@/stores/user.store"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
-export function AuthGuard({ children }: { children: React.ReactNode }) {
+export function LoginRedirectGuard({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   const router = useRouter()
   const hydrateUser = useUserStore((state) => state.hydrateUser)
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
 
   useEffect(() => {
     function checkAuth() {
-      const hasSession = hasStoredSession()
-
-      if (!hasSession) {
-        setIsAuthenticated(false)
-        setIsCheckingAuth(false)
-        router.replace("/login")
+      if (hasStoredSession()) {
+        hydrateUser()
+        router.replace("/dashboard")
         return
       }
 
-      hydrateUser()
-      setIsAuthenticated(true)
       setIsCheckingAuth(false)
     }
 
     checkAuth()
   }, [hydrateUser, router])
 
-  if (isCheckingAuth || !isAuthenticated) {
+  if (isCheckingAuth) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background text-sm text-muted-foreground">
         Loading...

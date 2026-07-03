@@ -8,5 +8,5 @@ export type UserState = {
     user: User|null
     setUser: (user: User) => void
     clearUser: () => void
-    hydrateUser: () => void
+    hydrateUser: () => User | null
 }
