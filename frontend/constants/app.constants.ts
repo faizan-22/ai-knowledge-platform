@@ -50,6 +50,14 @@ export const APP_CONSTANTS = {
     DOCUMENT_DELETE_SUCCESS: "Document deleted",
     DOCUMENT_DELETE_ERROR: "Unable to delete document",
     DOCUMENT_LOAD_ERROR: "Unable to load documents",
+    CHAT_DOCUMENT_DIALOG_TITLE: "Choose document",
+    CHAT_DOCUMENT_DIALOG_DESCRIPTION:
+      "Select an uploaded document or upload a new PDF before starting chat.",
+    CHAT_DOCUMENT_NOT_READY:
+      "Document uploaded, but it is not ready for chat yet. Refresh and select it when ready.",
+    CHAT_SEND_LOADING: "Thinking...",
+    CHAT_SEND_ERROR: "Unable to send message",
+    CHAT_QUERY_REQUIRED: "Enter a question before sending",
     LOAD_RELOAD_PAGE: "Loading... Reload if it takes time...",
   },
 } as const

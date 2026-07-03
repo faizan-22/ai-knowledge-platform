@@ -1,4 +1,3 @@
-import { APP_CONSTANTS } from "@/constants/app.constants"
 import { ROUTES } from "@/constants/routes"
 import {
   LayoutDashboardIcon,
@@ -21,7 +20,7 @@ export const SIDEBAR_DATA = {
     },
     {
       name: "Chat",
-      url: APP_CONSTANTS.LINKS.PLACEHOLDER,
+      url: ROUTES.CHAT,
       icon: MessageSquareText,
     },
   ],

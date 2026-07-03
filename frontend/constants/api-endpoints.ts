@@ -8,4 +8,7 @@ export const API_ENDPOINTS = {
     TITLE: (documentId: number) => `/documents/title/${documentId}`,
     DETAIL: (documentId: number) => `/documents/${documentId}`,
   },
+  CHAT: {
+    SEND: (documentId: number) => `/chat/${documentId}`,
+  },
 } as const
