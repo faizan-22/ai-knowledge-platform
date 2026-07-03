@@ -27,7 +27,7 @@ import {
   LogOutIcon,
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { handleSuccess } from "@/lib/handle-toast"
+import { toast } from "sonner"
 
 export function NavUser(user: User) {
   const { isMobile } = useSidebar()
@@ -40,9 +40,16 @@ export function NavUser(user: User) {
     .join("")
     .toUpperCase()
 
-  function handleLogout() {
-    logoutController()
-    handleSuccess(APP_CONSTANTS.MESSAGES.LOGOUT_SUCCESS)
+  async function handleLogout() {
+    const logoutPromise = Promise.resolve(logoutController())
+
+    toast.promise(logoutPromise, {
+      loading: APP_CONSTANTS.MESSAGES.LOGOUT_LOADING,
+      success: APP_CONSTANTS.MESSAGES.LOGOUT_SUCCESS,
+      error: APP_CONSTANTS.MESSAGES.LOGOUT_ERROR,
+    })
+
+    await logoutPromise
     router.push(ROUTES.LOGIN)
   }
 

@@ -30,7 +30,7 @@ export function LoginRedirectGuard({
   if (isCheckingAuth) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background text-sm text-muted-foreground">
-        {APP_CONSTANTS.MESSAGES.LOADING}
+        {APP_CONSTANTS.MESSAGES.LOAD_RELOAD_PAGE}
       </div>
     )
   }

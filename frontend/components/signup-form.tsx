@@ -18,11 +18,11 @@ import { Input } from "@/components/ui/input"
 import { APP_CONSTANTS } from "@/constants/app.constants"
 import { signupController } from "@/controllers/auth.controller"
 import { ROUTES } from "@/constants/routes"
-import { handleApiError, handleSuccess } from "@/lib/handle-toast"
 import { cn } from "@/lib/utils"
 import { EyeIcon, EyeOffIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { toast } from "sonner"
 
 export function SignupForm({
   className,
@@ -43,24 +43,26 @@ export function SignupForm({
       setIsLoading(true)
 
       if (password != confirmPassword) {
-        handleApiError(
-          new Error(APP_CONSTANTS.MESSAGES.PASSWORD_MISMATCH),
-          APP_CONSTANTS.MESSAGES.PASSWORD_MISMATCH
-        )
+        toast.error(APP_CONSTANTS.MESSAGES.PASSWORD_MISMATCH)
         return
       }
 
-      await signupController({
+      const signupPromise = signupController({
         name,
         email,
         password,
       })
 
-      handleSuccess(APP_CONSTANTS.MESSAGES.SIGNUP_SUCCESS)
+      toast.promise(signupPromise, {
+        loading: APP_CONSTANTS.MESSAGES.SIGNUP_LOADING,
+        success: APP_CONSTANTS.MESSAGES.SIGNUP_SUCCESS,
+        error: APP_CONSTANTS.MESSAGES.SIGNUP_ERROR,
+      })
 
+      await signupPromise
       router.push(ROUTES.LOGIN)
-    } catch (error) {
-      handleApiError(error, APP_CONSTANTS.MESSAGES.SIGNUP_ERROR)
+    } catch {
+      return
     } finally {
       setIsLoading(false)
     }
@@ -207,7 +209,9 @@ export function SignupForm({
                   className="h-10 bg-chart-1 text-[oklch(0.15_0.02_322)] hover:bg-chart-1/90"
                   disabled={isLoading}
                 >
-                  {isLoading ? "Creating Account" : "Create Account"}
+                  {isLoading
+                    ? APP_CONSTANTS.MESSAGES.SIGNUP_BUTTON_LOADING
+                    : "Create Account"}
                 </Button>
                 <FieldDescription className="px-6 text-center text-muted-foreground dark:text-white/50 [&>a]:text-foreground dark:[&>a]:text-white [&>a:hover]:text-chart-2 dark:[&>a:hover]:text-[oklch(0.83_0.12_306)]">
                   Already have an account?{" "}

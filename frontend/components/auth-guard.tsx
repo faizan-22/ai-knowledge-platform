@@ -32,7 +32,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   if (isCheckingAuth || !isAuthenticated) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background text-sm text-muted-foreground">
-        {APP_CONSTANTS.MESSAGES.RELOAD_PAGE}
+        {APP_CONSTANTS.MESSAGES.LOAD_RELOAD_PAGE}
       </div>
     )
   }

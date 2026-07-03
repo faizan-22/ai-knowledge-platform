@@ -21,8 +21,8 @@ import { ROUTES } from "@/constants/routes"
 import { loginController } from "@/controllers/auth.controller"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { handleApiError, handleSuccess } from "@/lib/handle-toast"
 import { EyeIcon, EyeOffIcon } from "lucide-react"
+import { toast } from "sonner"
 
 export function LoginForm({
   className,
@@ -40,16 +40,21 @@ export function LoginForm({
     setIsLoading(true)
 
     try {
-      const response = await loginController({
+      const loginPromise = loginController({
         email,
         password,
       })
 
-      handleSuccess(response.data.message)
+      toast.promise(loginPromise, {
+        loading: APP_CONSTANTS.MESSAGES.LOGIN_LOADING,
+        success: APP_CONSTANTS.MESSAGES.LOGIN_SUCCESS,
+        error: APP_CONSTANTS.MESSAGES.LOGIN_ERROR,
+      })
 
+      await loginPromise
       router.replace(ROUTES.DASHBOARD)
-    } catch (error) {
-      handleApiError(error, APP_CONSTANTS.MESSAGES.LOGIN_ERROR)
+    } catch {
+      return
     } finally {
       setIsLoading(false)
     }
@@ -134,7 +139,9 @@ export function LoginForm({
                   disabled={isLoading}
                   className="h-10 bg-chart-1 text-[oklch(0.15_0.02_322)] hover:bg-chart-1/90"
                 >
-                  {isLoading ? "Logging in..." : "Login"}
+                  {isLoading
+                    ? APP_CONSTANTS.MESSAGES.LOGIN_BUTTON_LOADING
+                    : "Login"}
                 </Button>
                 <FieldDescription className="text-center text-muted-foreground [&>a]:text-foreground [&>a:hover]:text-chart-2 dark:text-white/50 dark:[&>a]:text-white dark:[&>a:hover]:text-[oklch(0.83_0.12_306)]">
                   Don&apos;t have an account?{" "}

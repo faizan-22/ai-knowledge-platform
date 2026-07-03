@@ -3,6 +3,7 @@
 import { APP_CONSTANTS } from "@/constants/app.constants"
 import { LoginInput, SignupInput } from "@/schemas/auth.schema"
 import { loginUser, signUp } from "@/services/auth.service"
+import { useDocumentStore } from "@/stores/document.store"
 import {
   hasStoredSession,
   useUserStore,
@@ -32,6 +33,7 @@ export async function signupController(signupInput: SignupInput) {
 
 export function logoutController() {
   useUserStore.getState().clearUser()
+  useDocumentStore.getState().clearDocuments()
 }
 
 export function loadUserFromLocalStorage() {
