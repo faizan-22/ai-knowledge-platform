@@ -1,5 +1,7 @@
 "use client"
 
+import { APP_CONSTANTS } from "@/constants/app.constants"
+import { ROUTES } from "@/constants/routes"
 import { loadUserFromLocalStorage } from "@/controllers/auth.controller"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -16,7 +18,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       if (!hasSession) {
         setIsAuthenticated(false)
         setIsCheckingAuth(false)
-        router.replace("/login")
+        router.replace(ROUTES.LOGIN)
         return
       }
 
@@ -30,7 +32,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   if (isCheckingAuth || !isAuthenticated) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background text-sm text-muted-foreground">
-        Reload the page...
+        {APP_CONSTANTS.MESSAGES.RELOAD_PAGE}
       </div>
     )
   }

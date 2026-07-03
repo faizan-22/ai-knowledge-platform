@@ -1,5 +1,7 @@
 "use client"
 
+import { APP_CONSTANTS } from "@/constants/app.constants"
+import { ROUTES } from "@/constants/routes"
 import { loadUserFromLocalStorage } from "@/controllers/auth.controller"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
@@ -15,7 +17,7 @@ export function LoginRedirectGuard({
   useEffect(() => {
     function checkAuth() {
       if (loadUserFromLocalStorage()) {
-        router.replace("/dashboard")
+        router.replace(ROUTES.DASHBOARD)
         return
       }
 
@@ -28,7 +30,7 @@ export function LoginRedirectGuard({
   if (isCheckingAuth) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background text-sm text-muted-foreground">
-        Loading...
+        {APP_CONSTANTS.MESSAGES.LOADING}
       </div>
     )
   }

@@ -15,7 +15,9 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { APP_CONSTANTS } from "@/constants/app.constants"
 import { signupController } from "@/controllers/auth.controller"
+import { ROUTES } from "@/constants/routes"
 import { handleApiError, handleSuccess } from "@/lib/handle-toast"
 import { cn } from "@/lib/utils"
 import { EyeIcon, EyeOffIcon } from "lucide-react"
@@ -42,8 +44,8 @@ export function SignupForm({
 
       if (password != confirmPassword) {
         handleApiError(
-          new Error("Confirm password doesn't match"),
-          "Confirm password doesn't match"
+          new Error(APP_CONSTANTS.MESSAGES.PASSWORD_MISMATCH),
+          APP_CONSTANTS.MESSAGES.PASSWORD_MISMATCH
         )
         return
       }
@@ -54,11 +56,11 @@ export function SignupForm({
         password,
       })
 
-      handleSuccess(`User created successfully. Please login`)
+      handleSuccess(APP_CONSTANTS.MESSAGES.SIGNUP_SUCCESS)
 
-      router.push("/login")
+      router.push(ROUTES.LOGIN)
     } catch (error) {
-      handleApiError(error, "Unable to signup. Please try again.")
+      handleApiError(error, APP_CONSTANTS.MESSAGES.SIGNUP_ERROR)
     } finally {
       setIsLoading(false)
     }
@@ -210,7 +212,7 @@ export function SignupForm({
                 <FieldDescription className="px-6 text-center text-muted-foreground dark:text-white/50 [&>a]:text-foreground dark:[&>a]:text-white [&>a:hover]:text-chart-2 dark:[&>a:hover]:text-[oklch(0.83_0.12_306)]">
                   Already have an account?{" "}
                   <a
-                    href="/login"
+                    href={ROUTES.LOGIN}
                     aria-disabled={isLoading}
                     tabIndex={isLoading ? -1 : undefined}
                     className={cn(

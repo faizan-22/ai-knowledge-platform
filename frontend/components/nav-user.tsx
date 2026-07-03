@@ -1,7 +1,9 @@
 "use client"
 
+import { APP_CONSTANTS } from "@/constants/app.constants"
+import { ROUTES } from "@/constants/routes"
 import { logoutController } from "@/controllers/auth.controller"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,8 +42,8 @@ export function NavUser(user: User) {
 
   function handleLogout() {
     logoutController()
-    handleSuccess('Logout Successful')
-    router.push("/login")
+    handleSuccess(APP_CONSTANTS.MESSAGES.LOGOUT_SUCCESS)
+    router.push(ROUTES.LOGIN)
   }
 
   return (

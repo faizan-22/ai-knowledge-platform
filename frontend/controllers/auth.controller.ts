@@ -1,9 +1,9 @@
 "use client"
 
+import { APP_CONSTANTS } from "@/constants/app.constants"
 import { LoginInput, SignupInput } from "@/schemas/auth.schema"
 import { loginUser, signUp } from "@/services/auth.service"
 import {
-  ACCESS_TOKEN_STORAGE_KEY,
   hasStoredSession,
   useUserStore,
 } from "@/stores/user.store"
@@ -18,7 +18,10 @@ export async function loginController(loginInput: LoginInput) {
     id: String(response.data.id),
   })
 
-  localStorage.setItem(ACCESS_TOKEN_STORAGE_KEY, response.data.access_token)
+  localStorage.setItem(
+    APP_CONSTANTS.STORAGE_KEYS.ACCESS_TOKEN,
+    response.data.access_token
+  )
 
   return response
 }

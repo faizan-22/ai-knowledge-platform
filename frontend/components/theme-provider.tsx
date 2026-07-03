@@ -1,5 +1,6 @@
 "use client"
 
+import { APP_CONSTANTS } from "@/constants/app.constants"
 import * as React from "react"
 
 type Theme = "light" | "dark"
@@ -18,7 +19,7 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
       return "dark"
     }
 
-    const storedTheme = window.localStorage.getItem("theme")
+    const storedTheme = window.localStorage.getItem(APP_CONSTANTS.STORAGE_KEYS.THEME)
 
     if (storedTheme === "light" || storedTheme === "dark") {
       return storedTheme
@@ -29,7 +30,7 @@ function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const setTheme = React.useCallback((nextTheme: Theme) => {
     setThemeState(nextTheme)
-    localStorage.setItem("theme", nextTheme)
+    localStorage.setItem(APP_CONSTANTS.STORAGE_KEYS.THEME, nextTheme)
   }, [])
 
   React.useEffect(() => {

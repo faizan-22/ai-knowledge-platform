@@ -1,6 +1,7 @@
 import { LoginForm } from "@/components/login-form"
 import { LoginRedirectGuard } from "@/components/login-redirect-guard"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { APP_CONSTANTS } from "@/constants/app.constants"
 import { Brain } from "lucide-react"
 
 export default function Page() {
@@ -19,7 +20,7 @@ export default function Page() {
               <Brain className="size-9 text-chart-2 dark:text-[oklch(0.83_0.12_306)]" />
             </div>
             <p className="mb-3 text-sm font-medium text-chart-2 dark:text-[oklch(0.83_0.12_306)]">
-              AI Knowledge Platform
+              {APP_CONSTANTS.APP_NAME}
             </p>
             <h1 className="text-4xl font-semibold tracking-normal text-balance md:text-5xl">
               Welcome back

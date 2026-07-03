@@ -16,7 +16,13 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { MoreHorizontalIcon, FolderIcon, ShareIcon, Trash2Icon } from "lucide-react"
+import {
+  MoreHorizontalIcon,
+  FolderIcon,
+  ShareIcon,
+  Trash2Icon,
+  type LucideIcon,
+} from "lucide-react"
 
 export function NavPages({
   items,
@@ -24,7 +30,7 @@ export function NavPages({
   items: {
     name: string
     url: string
-    icon: React.ReactNode
+    icon: LucideIcon
   }[]
 }) {
   const { isMobile } = useSidebar()
@@ -37,7 +43,7 @@ export function NavPages({
           <SidebarMenuItem key={item.name}>
             <SidebarMenuButton asChild>
               <a href={item.url}>
-                {item.icon}
+                <item.icon />
                 <span>{item.name}</span>
               </a>
             </SidebarMenuButton>

@@ -16,6 +16,8 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
+import { APP_CONSTANTS } from "@/constants/app.constants"
+import { ROUTES } from "@/constants/routes"
 import { loginController } from "@/controllers/auth.controller"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -45,9 +47,9 @@ export function LoginForm({
 
       handleSuccess(response.data.message)
 
-      router.replace("/dashboard")
+      router.replace(ROUTES.DASHBOARD)
     } catch (error) {
-      handleApiError(error, "Unable to login. Please try again.")
+      handleApiError(error, APP_CONSTANTS.MESSAGES.LOGIN_ERROR)
     } finally {
       setIsLoading(false)
     }
@@ -137,7 +139,7 @@ export function LoginForm({
                 <FieldDescription className="text-center text-muted-foreground [&>a]:text-foreground [&>a:hover]:text-chart-2 dark:text-white/50 dark:[&>a]:text-white dark:[&>a:hover]:text-[oklch(0.83_0.12_306)]">
                   Don&apos;t have an account?{" "}
                   <a
-                    href="/signup"
+                    href={ROUTES.SIGNUP}
                     aria-disabled={isLoading}
                     tabIndex={isLoading ? -1 : undefined}
                     className={cn(
