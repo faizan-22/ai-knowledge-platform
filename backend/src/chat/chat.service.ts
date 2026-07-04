@@ -5,6 +5,15 @@ import {
   type RetrievedChunk,
 } from 'src/retrieval/retrieval.service';
 
+interface ParsedResponse {
+  answer: string;
+  sources: {
+    id: number;
+    chunkIndex: number;
+    pageNumber: number;
+  }[];
+}
+
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
@@ -42,6 +51,53 @@ export class ChatService {
       })
       .join('\n\n---\n\n');
 
-    return this.openAiService.generateAnswers(context, query);
+    const rawResponse = await this.openAiService.generateAnswers(
+      context,
+      query,
+    );
+
+    const sources: ParsedResponse['sources'] = [];
+
+    if (!rawResponse) {
+      return {
+        answer: "Couldn't generate the answer",
+        sources,
+      };
+    }
+
+    const parts = rawResponse.split(/\n\s*Sources:\s*\n/i);
+
+    const answer = parts[0].trim();
+    const rawSourcesBlock = parts[1] || '';
+
+    if (answer === "I couldn't find that information in the document.") {
+      return {
+        answer,
+        sources,
+      };
+    }
+
+    if (rawSourcesBlock) {
+      // Expect lines like: [1]
+      const sourceRegex = /^\s*\[\s*(\d+)\s*\]\s*$/gm;
+      let match: RegExpExecArray | null;
+
+      while ((match = sourceRegex.exec(rawSourcesBlock)) !== null) {
+        const id = match[1] ? parseInt(match[1].trim()) : -1;
+
+        if (id !== -1 && id <= relevantChunks.length) {
+          sources.push({
+            id,
+            chunkIndex: relevantChunks[id - 1].chunkIndex,
+            pageNumber: relevantChunks[id - 1].pageNumber,
+          });
+        }
+      }
+    }
+
+    return {
+      answer,
+      sources,
+    };
   }
 }

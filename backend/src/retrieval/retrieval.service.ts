@@ -5,6 +5,7 @@ import { OpenAiService } from 'src/open-ai/open-ai.service';
 export type RetrievedChunk = {
   id: number;
   content: string;
+  chunkIndex: number;
   pageNumber: number;
   documentId: number;
   distance: number;
@@ -43,7 +44,8 @@ export class RetrievalService {
     >`
         SELECT
         id, 
-        content, 
+        content,
+        "chunkIndex",
         "pageNumber",
         "documentId",
         "embedding" <=> ${vectorString}::vector AS distance
