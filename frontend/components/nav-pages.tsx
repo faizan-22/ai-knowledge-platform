@@ -1,30 +1,16 @@
 "use client"
 
 import { APP_CONSTANTS } from "@/constants/app.constants"
+import Link from "next/link"
 import { usePathname } from "next/navigation"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
 } from "@/components/ui/sidebar"
-import {
-  MoreHorizontalIcon,
-  FolderIcon,
-  ShareIcon,
-  Trash2Icon,
-  type LucideIcon,
-} from "lucide-react"
+import { type LucideIcon } from "lucide-react"
 
 export function NavPages({
   items,
@@ -35,7 +21,6 @@ export function NavPages({
     icon: LucideIcon
   }[]
 }) {
-  const { isMobile } = useSidebar()
   const pathname = usePathname()
 
   function isActivePage(url: string) {
@@ -56,13 +41,13 @@ export function NavPages({
           return (
             <SidebarMenuItem key={item.name}>
               <SidebarMenuButton asChild isActive={isActive}>
-                <a
+                <Link
                   href={item.url}
                   aria-current={isActive ? "page" : undefined}
                 >
                   <item.icon />
                   <span>{item.name}</span>
-                </a>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           )

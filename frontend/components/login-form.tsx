@@ -52,7 +52,7 @@ export function LoginForm({
       })
 
       await loginPromise
-      router.replace(ROUTES.DASHBOARD)
+      router.push(ROUTES.DASHBOARD)
     } catch {
       return
     } finally {

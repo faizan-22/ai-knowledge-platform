@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 
 import { NavPages } from "@/components/nav-pages"
 import { NavUser } from "@/components/nav-user"
@@ -31,12 +32,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:p-1.5!"
             >
-              <a href={ROUTES.DASHBOARD}>
+              <Link href={ROUTES.DASHBOARD}>
                 <Brain className="size-5!" />
                 <span className="text-base font-semibold">
                   {APP_CONSTANTS.APP_NAME}
                 </span>
-              </a>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

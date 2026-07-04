@@ -4,32 +4,37 @@ import { APP_CONSTANTS } from "@/constants/app.constants"
 import { ROUTES } from "@/constants/routes"
 import { loadUserFromLocalStorage } from "@/controllers/auth.controller"
 import { useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const router = useRouter()
-  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isAuthenticated, setIsAuthenticated] = useState(() =>
+    loadUserFromLocalStorage()
+  )
 
-  useEffect(() => {
-    function checkAuth() {
-      const hasSession = loadUserFromLocalStorage()
+  const checkAuth = useCallback(() => {
+    const hasSession = loadUserFromLocalStorage()
 
-      if (!hasSession) {
-        setIsAuthenticated(false)
-        setIsCheckingAuth(false)
-        router.replace(ROUTES.LOGIN)
-        return
-      }
-
-      setIsAuthenticated(true)
-      setIsCheckingAuth(false)
+    if (!hasSession) {
+      setIsAuthenticated(false)
+      router.replace(ROUTES.LOGIN)
+      return
     }
 
-    checkAuth()
+    setIsAuthenticated(true)
   }, [router])
 
-  if (isCheckingAuth || !isAuthenticated) {
+  useEffect(() => {
+    checkAuth()
+
+    window.addEventListener("pageshow", checkAuth)
+
+    return () => {
+      window.removeEventListener("pageshow", checkAuth)
+    }
+  }, [checkAuth])
+
+  if (!isAuthenticated) {
     return (
       <div className="flex min-h-svh items-center justify-center bg-background text-sm text-muted-foreground">
         {APP_CONSTANTS.MESSAGES.LOAD_RELOAD_PAGE}

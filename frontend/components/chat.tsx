@@ -110,7 +110,11 @@ function getEmptyStateTitle(selectedDocument: Document | null, canChat: boolean)
   return `Ready to chat with ${selectedDocument.title}`
 }
 
-export function Chat() {
+export function Chat({
+  initialDocumentId,
+}: {
+  initialDocumentId?: number | null
+}) {
   const documents = useDocumentStore((state) => state.documents)
   const isLoadingDocuments = useDocumentStore((state) => state.isLoading)
   const documentError = useDocumentStore((state) => state.error)
@@ -125,6 +129,7 @@ export function Chat() {
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const uploadFileInputRef = useRef<HTMLInputElement>(null)
+  const queryInputRef = useRef<HTMLInputElement>(null)
   const messageListRef = useRef<HTMLDivElement>(null)
 
   const readyDocuments = useMemo(
@@ -140,11 +145,36 @@ export function Chat() {
   }, [])
 
   useEffect(() => {
+    if (!initialDocumentId || documents.length === 0) {
+      return
+    }
+
+    const requestedDocument = documents.find(
+      (document) => document.id === initialDocumentId
+    )
+
+    if (!requestedDocument || selectedDocument?.id === requestedDocument.id) {
+      return
+    }
+
+    setSelectedDocument(requestedDocument)
+    setMessages([])
+    setQuery("")
+    setIsDocumentDialogOpen(false)
+  }, [documents, initialDocumentId, selectedDocument?.id])
+
+  useEffect(() => {
     messageListRef.current?.scrollTo({
       top: messageListRef.current.scrollHeight,
       behavior: "smooth",
     })
   }, [messages])
+
+  useEffect(() => {
+    if (!isSending && canChat) {
+      queryInputRef.current?.focus()
+    }
+  }, [canChat, isSending])
 
   function resetUploadForm() {
     setUploadTitle("")
@@ -249,7 +279,7 @@ export function Chat() {
   }
 
   return (
-    <section className="flex min-h-[calc(100vh-var(--header-height)-2rem)] flex-1 flex-col gap-4">
+    <section className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
       <Dialog
         open={isDocumentDialogOpen}
         onOpenChange={(open) => {
@@ -488,15 +518,15 @@ export function Chat() {
         </Button>
       </div>
 
-      <div className="grid min-h-0 flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="relative flex min-h-[32rem] flex-col overflow-hidden rounded-lg border bg-card">
+      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-chart-2/15 bg-[linear-gradient(180deg,oklch(0.985_0.012_306),oklch(1_0_0))] shadow-sm shadow-chart-2/10 dark:border-white/10 dark:bg-[linear-gradient(180deg,oklch(0.19_0.03_316),oklch(0.15_0.015_326))]">
           <div
             ref={messageListRef}
-            className="flex-1 space-y-4 overflow-y-auto p-4 pb-24"
+            className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4"
           >
             {messages.length === 0 ? (
               <div className="flex h-full min-h-80 flex-col items-center justify-center text-center">
-                <div className="mb-3 flex size-11 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <div className="mb-3 flex size-11 items-center justify-center rounded-md border border-chart-2/20 bg-chart-2/10 text-chart-2 shadow-sm shadow-chart-2/10 dark:border-chart-1/20 dark:bg-chart-1/10 dark:text-chart-1">
                   <MessageSquareTextIcon className="size-5" />
                 </div>
                 <p className="font-medium">{emptyStateTitle}</p>
@@ -516,22 +546,22 @@ export function Chat() {
                 )}
               >
                 {message.role === "assistant" ? (
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-chart-2/20 bg-chart-2/10 text-chart-2 dark:border-chart-1/20 dark:bg-chart-1/10 dark:text-chart-1">
                     <BotIcon className="size-4" />
                   </div>
                 ) : null}
                 <div
                   className={cn(
-                    "max-w-[82%] rounded-lg border px-3 py-2 text-sm leading-6",
+                    "max-w-[82%] rounded-lg border px-3 py-2 text-sm leading-6 shadow-xs",
                     message.role === "user"
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "bg-background"
+                      ? "border-chart-2 bg-chart-2 text-white dark:border-chart-1 dark:bg-chart-1 dark:text-primary-foreground"
+                      : "border-chart-2/15 bg-background/85 text-foreground dark:border-white/10 dark:bg-white/[0.06]"
                   )}
                 >
                   <p className="whitespace-pre-wrap">{message.content}</p>
                 </div>
                 {message.role === "user" ? (
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-muted text-muted-foreground">
+                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-chart-2/20 bg-chart-2/10 text-chart-2 dark:border-chart-1/20 dark:bg-chart-1/10 dark:text-chart-1">
                     <UserIcon className="size-4" />
                   </div>
                 ) : null}
@@ -540,10 +570,10 @@ export function Chat() {
 
             {isSending ? (
               <div className="flex gap-3">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-chart-2/20 bg-chart-2/10 text-chart-2 dark:border-chart-1/20 dark:bg-chart-1/10 dark:text-chart-1">
                   <BotIcon className="size-4" />
                 </div>
-                <div className="flex items-center gap-2 rounded-lg border bg-background px-3 py-2 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 rounded-lg border border-chart-2/15 bg-background/85 px-3 py-2 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.06]">
                   <LoaderCircleIcon className="size-4 animate-spin" />
                   {APP_CONSTANTS.MESSAGES.CHAT_SEND_LOADING}
                 </div>
@@ -553,35 +583,36 @@ export function Chat() {
 
           <form
             onSubmit={handleSendMessage}
-            className="absolute inset-x-4 bottom-4 rounded-lg border bg-background/95 p-2 shadow-lg backdrop-blur"
+            className="shrink-0 bg-transparent p-3"
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 rounded-lg bg-transparent">
               <Input
+                ref={queryInputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={chatPlaceholder}
                 disabled={!canChat || isSending}
-                className="h-9 flex-1 border-0 bg-transparent shadow-none focus-visible:ring-0"
+                className="h-12 flex-1 rounded-4xl border-chart-2/20 bg-background/95 px-4 shadow-sm shadow-chart-2/10 focus-visible:border-chart-2 focus-visible:ring-chart-2/20 dark:border-white/10 dark:bg-white/[0.07] dark:focus-visible:border-chart-1 dark:focus-visible:ring-chart-1/20"
               />
               <Button
                 type="submit"
-                size="icon"
                 disabled={!canChat || isSending || !query.trim()}
                 aria-label="Send message"
+                className="size-12 rounded-4xl bg-chart-2 text-white shadow-sm shadow-chart-2/20 hover:bg-chart-2/90 dark:bg-chart-1 dark:text-primary-foreground dark:hover:bg-chart-1/90"
               >
                 {isSending ? (
                   <LoaderCircleIcon className="animate-spin" />
                 ) : (
-                  <SendIcon />
+                  <SendIcon className="size-5" />
                 )}
               </Button>
             </div>
           </form>
         </div>
 
-        <aside className="rounded-lg border bg-card p-4">
+        <aside className="min-h-0 overflow-hidden rounded-lg border border-chart-2/15 bg-[linear-gradient(180deg,oklch(0.985_0.012_306),oklch(1_0_0))] p-4 shadow-sm shadow-chart-2/10 dark:border-white/10 dark:bg-[linear-gradient(180deg,oklch(0.19_0.03_316),oklch(0.15_0.015_326))]">
           <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-red-50 text-red-600 dark:bg-red-950/50 dark:text-red-300">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-md border border-chart-2/20 bg-chart-2/10 text-chart-2 dark:border-chart-1/20 dark:bg-chart-1/10 dark:text-chart-1">
               <FileTextIcon className="size-5" />
             </div>
             <div className="min-w-0 flex-1">

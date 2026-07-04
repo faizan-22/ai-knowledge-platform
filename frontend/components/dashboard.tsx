@@ -5,6 +5,7 @@ import {
   EllipsisIcon,
   EyeIcon,
   FileTextIcon,
+  MessageSquareTextIcon,
   PencilIcon,
   RefreshCwIcon,
   Trash2Icon,
@@ -12,8 +13,10 @@ import {
   XIcon,
 } from "lucide-react"
 import { toast } from "sonner"
+import { useRouter } from "next/navigation"
 
 import { APP_CONSTANTS } from "@/constants/app.constants"
+import { ROUTES } from "@/constants/routes"
 import {
   deleteDocumentController,
   loadDocumentsController,
@@ -97,6 +100,7 @@ function getStatusBadgeClassName(status: string) {
 }
 
 export function Dashboard() {
+  const router = useRouter()
   const documents = useDocumentStore((state) => state.documents)
   const isLoading = useDocumentStore((state) => state.isLoading)
   const error = useDocumentStore((state) => state.error)
@@ -189,6 +193,10 @@ export function Dashboard() {
       success: APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_SUCCESS,
       error: APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_ERROR,
     })
+  }
+
+  function handleOpenInChat(document: Document) {
+    router.push(`${ROUTES.CHAT}?documentId=${document.id}`)
   }
 
   return (
@@ -364,18 +372,19 @@ export function Dashboard() {
           <Table className="table-fixed">
             <TableHeader className="bg-muted/40">
               <TableRow>
-                <TableHead className="w-[26%] px-4">Document</TableHead>
-                <TableHead className="w-[32%]">File Name</TableHead>
+                <TableHead className="w-[24%] px-4">Document</TableHead>
+                <TableHead className="w-[28%]">File Name</TableHead>
                 <TableHead className="w-[10%]">Type</TableHead>
                 <TableHead className="w-[10%]">Size</TableHead>
                 <TableHead className="w-[12%]">Status</TableHead>
+                <TableHead className="w-[12%]">Chat</TableHead>
                 <TableHead className="w-20 pr-6 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {Array.from({ length: 4 }).map((_, index) => (
                 <TableRow key={index} className="h-14">
-                  {Array.from({ length: 6 }).map((__, cellIndex) => (
+                  {Array.from({ length: 7 }).map((__, cellIndex) => (
                     <TableCell key={cellIndex} className="px-4">
                       <div className="h-4 w-full max-w-36 animate-pulse rounded bg-muted" />
                     </TableCell>
@@ -402,11 +411,12 @@ export function Dashboard() {
           <Table className="table-fixed">
             <TableHeader className="bg-muted/40">
               <TableRow>
-                <TableHead className="w-[26%] px-4">Document</TableHead>
-                <TableHead className="w-[32%]">File Name</TableHead>
+                <TableHead className="w-[24%] px-4">Document</TableHead>
+                <TableHead className="w-[28%]">File Name</TableHead>
                 <TableHead className="w-[10%]">Type</TableHead>
                 <TableHead className="w-[10%]">Size</TableHead>
                 <TableHead className="w-[10%]">Status</TableHead>
+                <TableHead className="w-[14%]">Chat</TableHead>
                 <TableHead className="w-20 pr-6 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -444,6 +454,17 @@ export function Dashboard() {
                     >
                       {formatStatus(document.status)}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleOpenInChat(document)}
+                    >
+                      <MessageSquareTextIcon />
+                      Open in chat
+                    </Button>
                   </TableCell>
                   <TableCell className="pr-6 text-right">
                     <DropdownMenu>
