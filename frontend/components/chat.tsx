@@ -2,14 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react"
 import {
-  BotIcon,
   FileTextIcon,
   LoaderCircleIcon,
   MessageSquareTextIcon,
   RefreshCwIcon,
   SendIcon,
   UploadIcon,
-  UserIcon,
   XIcon,
 } from "lucide-react"
 import { toast } from "sonner"
@@ -22,7 +20,7 @@ import {
 } from "@/controllers/document.controller"
 import { cn } from "@/lib/utils"
 import { useDocumentStore } from "@/stores/document.store"
-import type { ChatMessage } from "@/types/chat.types"
+import type { ChatMessage, ChatResponse, Sources } from "@/types/chat.types"
 import type { Document } from "@/types/document.types"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -78,12 +76,21 @@ function getStatusBadgeClassName(status: string) {
   }
 }
 
-function createMessage(role: ChatMessage["role"], content: string): ChatMessage {
+function createMessage(
+  role: ChatMessage["role"],
+  content: string,
+  sources: Sources[]
+): ChatMessage {
   return {
     id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     role,
     content,
+    sources,
   }
+}
+
+function formatSourceLabel(source: Sources) {
+  return `[${source.id}] Page ${source.pageNumber}`
 }
 
 function getChatPlaceholder(selectedDocument: Document | null, canChat: boolean) {
@@ -139,6 +146,24 @@ export function Chat({
   const canChat = selectedDocument?.status === "READY"
   const chatPlaceholder = getChatPlaceholder(selectedDocument, canChat)
   const emptyStateTitle = getEmptyStateTitle(selectedDocument, canChat)
+  const sourceReferences = useMemo(() => {
+    const seenSources = new Set<string>()
+
+    return messages
+      .filter((message) => message.role === "assistant")
+      .flatMap((message) => message.sources)
+      .filter((source) => {
+        const sourceKey = `${source.id}-${source.pageNumber}`
+
+        if (seenSources.has(sourceKey)) {
+          return false
+        }
+
+        seenSources.add(sourceKey)
+        return true
+      })
+      .slice(0, 6)
+  }, [messages])
 
   useEffect(() => {
     loadDocumentsController().catch(() => undefined)
@@ -248,19 +273,19 @@ export function Chat({
       return
     }
 
-    const userMessage = createMessage("user", nextQuery)
+    const userMessage = createMessage("user", nextQuery, [])
     setMessages((currentMessages) => [...currentMessages, userMessage])
     setQuery("")
     setIsSending(true)
 
     try {
-      const response = await sendChatMessageController(
+      const response: ChatResponse = await sendChatMessageController(
         selectedDocument.id,
         nextQuery
       )
       setMessages((currentMessages) => [
         ...currentMessages,
-        createMessage("assistant", response.data),
+        createMessage("assistant", response.data.answer, response.data.sources),
       ])
     } catch (error) {
       const message =
@@ -271,7 +296,7 @@ export function Chat({
       toast.error(message)
       setMessages((currentMessages) => [
         ...currentMessages,
-        createMessage("assistant", APP_CONSTANTS.MESSAGES.CHAT_SEND_ERROR),
+        createMessage("assistant", APP_CONSTANTS.MESSAGES.CHAT_SEND_ERROR, []),
       ])
     } finally {
       setIsSending(false)
@@ -279,7 +304,7 @@ export function Chat({
   }
 
   return (
-    <section className="flex h-full min-h-0 flex-col gap-4 overflow-hidden">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-lg border bg-background shadow-sm">
       <Dialog
         open={isDocumentDialogOpen}
         onOpenChange={(open) => {
@@ -499,106 +524,119 @@ export function Chat({
         </DialogContent>
       </Dialog>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-semibold tracking-tight">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-3 border-b bg-background/95 px-5 py-4">
+        <div className="min-w-0">
+          <h3 className="text-base font-semibold tracking-tight text-foreground">
             Document Chat
           </h3>
-          <p className="text-sm text-muted-foreground">
-            Ask questions against one selected document.
+          <p className="mt-1 truncate text-sm text-muted-foreground">
+            {selectedDocument
+              ? `Ask anything about ${selectedDocument.title}`
+              : "Choose a document to start a focused research session."}
           </p>
         </div>
         <Button
           type="button"
           variant="outline"
+          size="sm"
           onClick={() => setIsDocumentDialogOpen(true)}
+          className="shrink-0"
         >
           <FileTextIcon />
           {selectedDocument ? "Change document" : "Choose document"}
         </Button>
       </div>
 
-      <div className="grid min-h-0 flex-1 gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-chart-2/15 bg-[linear-gradient(180deg,oklch(0.985_0.012_306),oklch(1_0_0))] shadow-sm shadow-chart-2/10 dark:border-white/10 dark:bg-[linear-gradient(180deg,oklch(0.19_0.03_316),oklch(0.15_0.015_326))]">
+      <div className="grid min-h-0 flex-1 overflow-hidden lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-h-0 flex-col overflow-hidden bg-background">
           <div
             ref={messageListRef}
-            className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4"
+            className="min-h-0 flex-1 overflow-y-auto bg-muted/15 px-4 py-8"
           >
-            {messages.length === 0 ? (
-              <div className="flex h-full min-h-80 flex-col items-center justify-center text-center">
-                <div className="mb-3 flex size-11 items-center justify-center rounded-md border border-chart-2/20 bg-chart-2/10 text-chart-2 shadow-sm shadow-chart-2/10 dark:border-chart-1/20 dark:bg-chart-1/10 dark:text-chart-1">
-                  <MessageSquareTextIcon className="size-5" />
-                </div>
-                <p className="font-medium">{emptyStateTitle}</p>
-                <p className="mt-1 max-w-sm text-sm text-muted-foreground">
-                  Questions are sent to the current document only. Chat history
-                  is kept on this screen for now.
-                </p>
-              </div>
-            ) : null}
-
-            {messages.map((message) => (
-              <div
-                key={message.id}
-                className={cn(
-                  "flex gap-3",
-                  message.role === "user" && "justify-end"
-                )}
-              >
-                {message.role === "assistant" ? (
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-chart-2/20 bg-chart-2/10 text-chart-2 dark:border-chart-1/20 dark:bg-chart-1/10 dark:text-chart-1">
-                    <BotIcon className="size-4" />
+            <div className="mx-auto flex min-h-full w-full max-w-3xl flex-col gap-7">
+              {messages.length === 0 ? (
+                <div className="flex flex-1 flex-col items-center justify-center py-12 text-center">
+                  <div className="mb-4 flex size-12 items-center justify-center rounded-lg border bg-background text-muted-foreground shadow-xs">
+                    <MessageSquareTextIcon className="size-5" />
                   </div>
-                ) : null}
+                  <p className="text-base font-medium">{emptyStateTitle}</p>
+                  <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
+                    Questions are sent to the current document only. Responses
+                    will include source citations when the document provides
+                    them.
+                  </p>
+                </div>
+              ) : null}
+
+              {messages.map((message) => (
                 <div
+                  key={message.id}
                   className={cn(
-                    "max-w-[82%] rounded-lg border px-3 py-2 text-sm leading-6 shadow-xs",
-                    message.role === "user"
-                      ? "border-chart-2 bg-chart-2 text-white dark:border-chart-1 dark:bg-chart-1 dark:text-primary-foreground"
-                      : "border-chart-2/15 bg-background/85 text-foreground dark:border-white/10 dark:bg-white/[0.06]"
+                    "flex",
+                    message.role === "user" && "justify-end"
                   )}
                 >
-                  <p className="whitespace-pre-wrap">{message.content}</p>
-                </div>
-                {message.role === "user" ? (
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-chart-2/20 bg-chart-2/10 text-chart-2 dark:border-chart-1/20 dark:bg-chart-1/10 dark:text-chart-1">
-                    <UserIcon className="size-4" />
+                  <div
+                    className={cn(
+                      "text-sm leading-7",
+                      message.role === "user"
+                        ? "max-w-[76%] rounded-2xl bg-primary px-4 py-2.5 text-primary-foreground shadow-xs"
+                        : "w-full text-foreground"
+                    )}
+                  >
+                    <p className="whitespace-pre-wrap">{message.content}</p>
+                    {message.role === "assistant" &&
+                    message.sources.length > 0 ? (
+                      <div className="mt-3 flex flex-wrap gap-1.5">
+                        {message.sources.map((source) => (
+                          <Badge
+                            key={`${message.id}-${source.id}-${source.pageNumber}-${source.chunkIndex}`}
+                            variant="outline"
+                            className="h-5 rounded-md border-border bg-background px-2 font-mono text-[0.625rem] font-medium text-muted-foreground shadow-xs"
+                          >
+                            {formatSourceLabel(source)}
+                          </Badge>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
-                ) : null}
-              </div>
-            ))}
+                </div>
+              ))}
 
-            {isSending ? (
-              <div className="flex gap-3">
-                <div className="flex size-8 shrink-0 items-center justify-center rounded-md border border-chart-2/20 bg-chart-2/10 text-chart-2 dark:border-chart-1/20 dark:bg-chart-1/10 dark:text-chart-1">
-                  <BotIcon className="size-4" />
+              {isSending ? (
+                <div className="flex">
+                  <div
+                    aria-label={APP_CONSTANTS.MESSAGES.CHAT_SEND_LOADING}
+                    className="flex items-center gap-1.5 py-2"
+                  >
+                    <span className="size-1 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.2s]" />
+                    <span className="size-1 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.1s]" />
+                    <span className="size-1 animate-bounce rounded-full bg-muted-foreground" />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 rounded-lg border border-chart-2/15 bg-background/85 px-3 py-2 text-sm text-muted-foreground dark:border-white/10 dark:bg-white/[0.06]">
-                  <LoaderCircleIcon className="size-4 animate-spin" />
-                  {APP_CONSTANTS.MESSAGES.CHAT_SEND_LOADING}
-                </div>
-              </div>
-            ) : null}
+              ) : null}
+            </div>
           </div>
 
           <form
             onSubmit={handleSendMessage}
-            className="shrink-0 bg-transparent p-3"
+            className="shrink-0 bg-background px-4 py-4"
           >
-            <div className="flex items-center gap-2 rounded-lg bg-transparent">
+            <div className="mx-auto flex w-full max-w-3xl items-center gap-2 rounded-xl border bg-card p-2 shadow-sm">
               <Input
                 ref={queryInputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={chatPlaceholder}
                 disabled={!canChat || isSending}
-                className="h-12 flex-1 rounded-4xl border-chart-2/20 bg-background/95 px-4 shadow-sm shadow-chart-2/10 focus-visible:border-chart-2 focus-visible:ring-chart-2/20 dark:border-white/10 dark:bg-white/[0.07] dark:focus-visible:border-chart-1 dark:focus-visible:ring-chart-1/20"
+                className="h-10 flex-1 border-0 bg-transparent px-2 shadow-none focus-visible:ring-0"
               />
               <Button
                 type="submit"
                 disabled={!canChat || isSending || !query.trim()}
                 aria-label="Send message"
-                className="size-12 rounded-4xl bg-chart-2 text-white shadow-sm shadow-chart-2/20 hover:bg-chart-2/90 dark:bg-chart-1 dark:text-primary-foreground dark:hover:bg-chart-1/90"
+                size="icon"
+                className="size-9 rounded-lg shadow-xs"
               >
                 {isSending ? (
                   <LoaderCircleIcon className="animate-spin" />
@@ -610,13 +648,16 @@ export function Chat({
           </form>
         </div>
 
-        <aside className="min-h-0 overflow-hidden rounded-lg border border-chart-2/15 bg-[linear-gradient(180deg,oklch(0.985_0.012_306),oklch(1_0_0))] p-4 shadow-sm shadow-chart-2/10 dark:border-white/10 dark:bg-[linear-gradient(180deg,oklch(0.19_0.03_316),oklch(0.15_0.015_326))]">
+        <aside className="min-h-0 overflow-y-auto border-t bg-card p-5 lg:border-t-0 lg:border-l">
           <div className="flex items-start gap-3">
-            <div className="flex size-10 shrink-0 items-center justify-center rounded-md border border-chart-2/20 bg-chart-2/10 text-chart-2 dark:border-chart-1/20 dark:bg-chart-1/10 dark:text-chart-1">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-lg border bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-300">
               <FileTextIcon className="size-5" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium">
+              <p className="text-xs font-medium uppercase text-muted-foreground">
+                Current document
+              </p>
+              <p className="mt-1 truncate text-sm font-semibold">
                 {selectedDocument?.title ?? "No document selected"}
               </p>
               <p className="mt-1 truncate text-xs text-muted-foreground">
@@ -627,27 +668,53 @@ export function Chat({
           </div>
 
           {selectedDocument ? (
-            <div className="mt-5 grid gap-3 text-sm">
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Status</span>
-                <Badge
-                  variant="outline"
-                  className={getStatusBadgeClassName(selectedDocument.status)}
-                >
-                  {formatStatus(selectedDocument.status)}
-                </Badge>
+            <div className="mt-6 grid gap-6">
+              <div className="grid gap-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Status</span>
+                  <Badge
+                    variant="outline"
+                    className={getStatusBadgeClassName(selectedDocument.status)}
+                  >
+                    {formatStatus(selectedDocument.status)}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Type</span>
+                  <span className="truncate text-right">
+                    {selectedDocument.mimeType}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Size</span>
+                  <span>{formatFileSize(selectedDocument.size)}</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Type</span>
-                <span>{selectedDocument.mimeType}</span>
-              </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-muted-foreground">Size</span>
-                <span>{formatFileSize(selectedDocument.size)}</span>
-              </div>
+
+              {sourceReferences.length > 0 ? (
+                <div className="border-t pt-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium">Sources</p>
+                    <span className="text-xs text-muted-foreground">
+                      {sourceReferences.length}
+                    </span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {sourceReferences.map((source) => (
+                      <Badge
+                        key={`rail-${source.id}-${source.pageNumber}-${source.chunkIndex}`}
+                        variant="outline"
+                        className="h-6 rounded-md bg-background font-mono text-[0.625rem] text-muted-foreground"
+                      >
+                        {formatSourceLabel(source)}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : (
-            <div className="mt-5 rounded-md border border-dashed px-3 py-8 text-center text-sm text-muted-foreground">
+            <div className="mt-6 rounded-lg border border-dashed bg-muted/20 px-3 py-8 text-center text-sm text-muted-foreground">
               The attached document details will appear here.
             </div>
           )}

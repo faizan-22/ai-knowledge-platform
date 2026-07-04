@@ -10,15 +10,5 @@ export async function sendChatMessage(
     query,
   })
 
-  if (typeof response.data === "string") {
-    return {
-      success: true,
-      statusCode: response.status,
-      data: response.data,
-      timeStamp: "",
-      path: API_ENDPOINTS.CHAT.SEND(documentId),
-    }
-  }
-
   return response.data
 }

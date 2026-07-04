@@ -4,6 +4,7 @@ export type ChatMessage = {
   id: string
   role: ChatMessageRole
   content: string
+  sources: Sources[]
 }
 
 export type ChatRequest = {
@@ -13,7 +14,16 @@ export type ChatRequest = {
 export type ChatResponse = {
   success: boolean
   statusCode: number
-  data: string
+  data: {
+    answer: string
+    sources: Sources[]
+  }
   timeStamp: string
   path: string
+}
+
+export type Sources = {
+  id: number
+  chunkIndex: number
+  pageNumber: number
 }
