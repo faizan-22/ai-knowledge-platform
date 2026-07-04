@@ -124,6 +124,16 @@ export function Dashboard() {
   }
 
   function handleUploadFileChange(file: File | null) {
+    if (file && file.size > APP_CONSTANTS.DOCUMENTS.MAX_UPLOAD_FILE_SIZE_BYTES) {
+      toast.error(APP_CONSTANTS.MESSAGES.DOCUMENT_FILE_SIZE_ERROR)
+
+      if (uploadFileInputRef.current) {
+        uploadFileInputRef.current.value = ""
+      }
+
+      return
+    }
+
     setUploadFile(file)
     setUploadTitle(file ? getTitleFromFileName(file.name) : "")
   }
@@ -138,6 +148,11 @@ export function Dashboard() {
 
     if (uploadFile.type !== "application/pdf") {
       toast.error(APP_CONSTANTS.MESSAGES.DOCUMENT_FILE_TYPE_ERROR)
+      return
+    }
+
+    if (uploadFile.size > APP_CONSTANTS.DOCUMENTS.MAX_UPLOAD_FILE_SIZE_BYTES) {
+      toast.error(APP_CONSTANTS.MESSAGES.DOCUMENT_FILE_SIZE_ERROR)
       return
     }
 

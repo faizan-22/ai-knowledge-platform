@@ -65,7 +65,7 @@ export class ChatService {
       };
     }
 
-    const parts = rawResponse.split(/\n\s*Sources:\s*\n/i);
+    const parts = rawResponse.split(/\n\s*Sources:\s*/i);
 
     const answer = parts[0].trim();
     const rawSourcesBlock = parts[1] || '';

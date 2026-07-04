@@ -8,6 +8,9 @@ export const APP_CONSTANTS = {
     ACCESS_TOKEN: "access_token",
     THEME: "theme",
   },
+  DOCUMENTS: {
+    MAX_UPLOAD_FILE_SIZE_BYTES: 5000000,
+  },
   MESSAGES: {
     LOADING: "Loading...",
     RELOAD_PAGE: "Reload the page...",
@@ -26,6 +29,7 @@ export const APP_CONSTANTS = {
     DOCUMENT_TITLE_REQUIRED: "Document title is required",
     DOCUMENT_FILE_REQUIRED: "Please select a PDF file",
     DOCUMENT_FILE_TYPE_ERROR: "Only PDF files are supported",
+    DOCUMENT_FILE_SIZE_ERROR: "PDF file must be 5 MB or smaller",
     DOCUMENT_UPLOAD_DIALOG_TITLE: "Upload document",
     DOCUMENT_UPLOAD_DIALOG_DESCRIPTION:
       "Select a PDF and add a title for your document library.",

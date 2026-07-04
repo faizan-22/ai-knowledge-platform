@@ -46,6 +46,11 @@ export async function uploadDocumentController(file: File, title: string) {
     throw new Error(APP_CONSTANTS.MESSAGES.DOCUMENT_FILE_TYPE_ERROR)
   }
 
+  if (file.size > APP_CONSTANTS.DOCUMENTS.MAX_UPLOAD_FILE_SIZE_BYTES) {
+    documentStore.setError(APP_CONSTANTS.MESSAGES.DOCUMENT_FILE_SIZE_ERROR)
+    throw new Error(APP_CONSTANTS.MESSAGES.DOCUMENT_FILE_SIZE_ERROR)
+  }
+
   documentStore.setError(null)
 
   try {

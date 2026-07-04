@@ -607,9 +607,9 @@ export function Chat({
                 <div className="flex">
                   <div
                     aria-label={APP_CONSTANTS.MESSAGES.CHAT_SEND_LOADING}
-                    className="flex items-center gap-1.5 py-2"
+                    className="flex items-center gap-1 py-2"
                   >
-                    <span className="size-1 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.2s]" />
+                    <span className="size-1 animate-bounce bounce rounded-full bg-muted-foreground [animation-delay:-0.2s]" />
                     <span className="size-1 animate-bounce rounded-full bg-muted-foreground [animation-delay:-0.1s]" />
                     <span className="size-1 animate-bounce rounded-full bg-muted-foreground" />
                   </div>

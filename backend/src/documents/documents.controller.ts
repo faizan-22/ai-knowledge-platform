@@ -70,7 +70,7 @@ export class DocumentsController {
     @UploadedFile(
       new ParseFilePipe({
         validators: [
-          new MaxFileSizeValidator({ maxSize: 50000000 }),
+          new MaxFileSizeValidator({ maxSize: 5000000 }),
           new FileTypeValidator({ fileType: 'application/pdf' }),
         ],
       }),
