@@ -4,6 +4,35 @@ AI Knowledge Platform is a full-stack RAG application for uploading PDF document
 
 The project combines a Next.js dashboard and chat experience with a NestJS API, PostgreSQL, Prisma, and pgvector-backed semantic search.
 
+## Screenshots / Demo Preview
+
+### Demo
+> Deployment in progress.
+
+### Login
+
+![Login screen](docs/screenshots/login.png)
+
+### Signup
+
+![Signup screen](docs/screenshots/signup.png)
+
+### Dashboard
+
+![Dashboard screen](docs/screenshots/dashboard.png)
+
+### Upload PDF Dialog
+
+![Upload PDF dialog](docs/screenshots/upload-dialog.png)
+
+### Document Chat
+
+![Document chat screen](docs/screenshots/chat.png)
+
+### Swagger Docs
+
+![Swagger API docs](docs/screenshots/swagger.png)
+
 ## Features
 
 - User signup and login with JWT-protected backend routes
@@ -30,6 +59,10 @@ The project combines a Next.js dashboard and chat experience with a NestJS API, 
 | PDF Processing | `pdf-parse-new` |
 | Auth | JWT, bcrypt |
 | API Docs | Swagger via `@nestjs/swagger` |
+
+## Why This Project
+
+This project was built to understand and implement a RAG system from scratch without relying on LangChain or LlamaIndex. The goal was to learn the complete flow: document ingestion, chunking, embeddings, vector search, grounded answer generation, and citation mapping.
 
 ## Architecture Overview
 
@@ -203,32 +236,6 @@ The generated answer includes source markers such as `[1]` and `[2]`. The backen
 }
 ```
 
-## Screenshots
-
-### Login
-
-![Login screen](docs/screenshots/login.png)
-
-### Signup
-
-![Signup screen](docs/screenshots/signup.png)
-
-### Dashboard
-
-![Dashboard screen](docs/screenshots/dashboard.png)
-
-### Upload PDF Dialog
-
-![Upload PDF dialog](docs/screenshots/upload-dialog.png)
-
-### Document Chat
-
-![Document chat screen](docs/screenshots/chat.png)
-
-### Swagger Docs
-
-![Swagger API docs](docs/screenshots/swagger.png)
-
 ## How to Run Locally
 
 ### Prerequisites
@@ -339,6 +346,32 @@ http://localhost:3000
 ## API Overview
 
 Most application routes return data through the backend's global transform interceptor. Protected routes require a bearer token.
+
+### Global Response Shape
+
+Successful API responses are wrapped by the transform interceptor:
+
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": {},
+  "timeStamp": "7/5/2026, 6:30:00 PM",
+  "path": "/documents"
+}
+```
+
+Error responses follow the global exception filter shape:
+
+```json
+{
+  "success": false,
+  "statusCode": 400,
+  "message": "Invalid file type",
+  "path": "/documents",
+  "timestamp": "..."
+}
+```
 
 ### Auth
 
