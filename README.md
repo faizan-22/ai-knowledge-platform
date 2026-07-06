@@ -7,7 +7,7 @@ The project combines a Next.js dashboard and chat experience with a NestJS API, 
 ## Screenshots / Demo Preview
 
 ### Demo
-> Deployment in progress.
+https://ai-knowledge-platform-ruby.vercel.app/
 
 ### Login
 
