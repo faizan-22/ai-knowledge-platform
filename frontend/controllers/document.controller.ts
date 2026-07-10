@@ -1,6 +1,7 @@
 "use client"
 
 import { APP_CONSTANTS } from "@/constants/app.constants"
+import { getApiErrorMessage } from "@/lib/api-error"
 import {
   deleteDocument,
   getDocuments,
@@ -9,10 +10,15 @@ import {
 } from "@/services/document.service"
 import { useDocumentStore } from "@/stores/document.store"
 
-export async function loadDocumentsController() {
+export async function loadDocumentsController({
+  showLoading = true,
+}: { showLoading?: boolean } = {}) {
   const documentStore = useDocumentStore.getState()
 
-  documentStore.setIsLoading(true)
+  if (showLoading) {
+    documentStore.setIsLoading(true)
+  }
+
   documentStore.setError(null)
 
   try {
@@ -20,15 +26,17 @@ export async function loadDocumentsController() {
     documentStore.setDocuments(response.data)
     return response
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : APP_CONSTANTS.MESSAGES.DOCUMENT_LOAD_ERROR
+    const message = getApiErrorMessage(
+      error,
+      APP_CONSTANTS.MESSAGES.DOCUMENT_LOAD_ERROR
+    )
 
     documentStore.setError(message)
-    throw error
+    throw new Error(message)
   } finally {
-    useDocumentStore.getState().setIsLoading(false)
+    if (showLoading) {
+      useDocumentStore.getState().setIsLoading(false)
+    }
   }
 }
 
@@ -58,13 +66,13 @@ export async function uploadDocumentController(file: File, title: string) {
     useDocumentStore.getState().addDocument(response.data)
     return response
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : APP_CONSTANTS.MESSAGES.DOCUMENT_UPLOAD_ERROR
+    const message = getApiErrorMessage(
+      error,
+      APP_CONSTANTS.MESSAGES.DOCUMENT_UPLOAD_ERROR
+    )
 
     useDocumentStore.getState().setError(message)
-    throw error
+    throw new Error(message)
   }
 }
 
@@ -87,13 +95,13 @@ export async function renameDocumentController(
     useDocumentStore.getState().updateDocument(response.data)
     return response
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_ERROR
+    const message = getApiErrorMessage(
+      error,
+      APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_ERROR
+    )
 
     useDocumentStore.getState().setError(message)
-    throw error
+    throw new Error(message)
   }
 }
 
@@ -105,12 +113,12 @@ export async function deleteDocumentController(documentId: number) {
     useDocumentStore.getState().removeDocument(documentId)
     return response
   } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_ERROR
+    const message = getApiErrorMessage(
+      error,
+      APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_ERROR
+    )
 
     useDocumentStore.getState().setError(message)
-    throw error
+    throw new Error(message)
   }
 }

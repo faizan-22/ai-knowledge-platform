@@ -18,6 +18,8 @@ import {
   loadDocumentsController,
   uploadDocumentController,
 } from "@/controllers/document.controller"
+import { useDocumentPolling } from "@/hooks/use-document-polling"
+import { getApiErrorMessage } from "@/lib/api-error"
 import { cn } from "@/lib/utils"
 import { useDocumentStore } from "@/stores/document.store"
 import type { ChatMessage, ChatResponse, Sources } from "@/types/chat.types"
@@ -169,6 +171,8 @@ export function Chat({
     loadDocumentsController().catch(() => undefined)
   }, [])
 
+  useDocumentPolling()
+
   useEffect(() => {
     if (!initialDocumentId || documents.length === 0) {
       return
@@ -187,6 +191,26 @@ export function Chat({
     setQuery("")
     setIsDocumentDialogOpen(false)
   }, [documents, initialDocumentId, selectedDocument?.id])
+
+  useEffect(() => {
+    if (!selectedDocument) {
+      return
+    }
+
+    const latestDocument = documents.find(
+      (document) => document.id === selectedDocument.id
+    )
+
+    if (!latestDocument) {
+      setSelectedDocument(null)
+      setIsDocumentDialogOpen(true)
+      return
+    }
+
+    if (latestDocument !== selectedDocument) {
+      setSelectedDocument(latestDocument)
+    }
+  }, [documents, selectedDocument])
 
   useEffect(() => {
     messageListRef.current?.scrollTo({
@@ -237,7 +261,8 @@ export function Chat({
     toast.promise(uploadPromise, {
       loading: APP_CONSTANTS.MESSAGES.DOCUMENT_UPLOAD_LOADING,
       success: APP_CONSTANTS.MESSAGES.DOCUMENT_UPLOAD_SUCCESS,
-      error: APP_CONSTANTS.MESSAGES.DOCUMENT_UPLOAD_ERROR,
+      error: (error) =>
+        getApiErrorMessage(error, APP_CONSTANTS.MESSAGES.DOCUMENT_UPLOAD_ERROR),
     })
 
     try {
@@ -288,10 +313,10 @@ export function Chat({
         createMessage("assistant", response.data.answer, response.data.sources),
       ])
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : APP_CONSTANTS.MESSAGES.CHAT_SEND_ERROR
+      const message = getApiErrorMessage(
+        error,
+        APP_CONSTANTS.MESSAGES.CHAT_SEND_ERROR
+      )
 
       toast.error(message)
       setMessages((currentMessages) => [

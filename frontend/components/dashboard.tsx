@@ -23,6 +23,8 @@ import {
   renameDocumentController,
   uploadDocumentController,
 } from "@/controllers/document.controller"
+import { getApiErrorMessage } from "@/lib/api-error"
+import { useDocumentPolling } from "@/hooks/use-document-polling"
 import { useDocumentStore } from "@/stores/document.store"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -88,6 +90,8 @@ function getStatusBadgeClassName(status: string) {
   switch (status) {
     case "UPLOADED":
       return "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/50 dark:text-blue-300"
+    case "QUEUED":
+      return "border-purple-200 bg-purple-50 text-purple-700 dark:border-purple-900/60 dark:bg-purple-950/50 dark:text-purple-300"
     case "PROCESSING":
       return "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/60 dark:bg-yellow-950/50 dark:text-yellow-300"
     case "READY":
@@ -113,6 +117,8 @@ export function Dashboard() {
   useEffect(() => {
     loadDocumentsController().catch(() => undefined)
   }, [])
+
+  useDocumentPolling()
 
   function resetUploadForm() {
     setUploadTitle("")
@@ -163,7 +169,8 @@ export function Dashboard() {
     toast.promise(uploadPromise, {
       loading: APP_CONSTANTS.MESSAGES.DOCUMENT_UPLOAD_LOADING,
       success: APP_CONSTANTS.MESSAGES.DOCUMENT_UPLOAD_SUCCESS,
-      error: APP_CONSTANTS.MESSAGES.DOCUMENT_UPLOAD_ERROR,
+      error: (error) =>
+        getApiErrorMessage(error, APP_CONSTANTS.MESSAGES.DOCUMENT_UPLOAD_ERROR),
     })
 
     try {
@@ -190,7 +197,8 @@ export function Dashboard() {
     toast.promise(renameDocumentController(document.id, nextTitle), {
       loading: APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_LOADING,
       success: APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_SUCCESS,
-      error: APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_ERROR,
+      error: (error) =>
+        getApiErrorMessage(error, APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_ERROR),
     })
   }
 
@@ -206,7 +214,8 @@ export function Dashboard() {
     toast.promise(deleteDocumentController(document.id), {
       loading: APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_LOADING,
       success: APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_SUCCESS,
-      error: APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_ERROR,
+      error: (error) =>
+        getApiErrorMessage(error, APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_ERROR),
     })
   }
 
