@@ -18,7 +18,6 @@ export class PdfParserService {
     };
 
     const textContent = await pageData.getTextContent(renderOptions);
-    this.logger.log(textContent.items);
     const text = textContent.items
       .map((item: any) => item.str)
       .join(' ')

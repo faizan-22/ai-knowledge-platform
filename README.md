@@ -37,7 +37,10 @@ https://ai-knowledge-platform-ruby.vercel.app/
 
 - User signup and login with JWT-protected backend routes
 - PDF upload with title, file validation, and per-user document ownership
-- Document status lifecycle: `UPLOADED`, `PROCESSING`, `READY`, and `FAILED`
+- BullMQ-backed document processing queue so uploads return without waiting for parsing, chunking, and embeddings
+- Document status lifecycle: `UPLOADED`, `QUEUED`, `PROCESSING`, `READY`, and `FAILED`
+- Automatic retry for failed document-processing jobs, with documents marked `FAILED` after 3 failed attempts
+- Frontend polling for queued or processing documents so dashboard and chat status stay fresh
 - Automatic PDF text extraction and page-aware chunking
 - OpenAI embedding generation for every document chunk
 - pgvector similarity search for retrieving the most relevant chunks
@@ -55,6 +58,7 @@ https://ai-knowledge-platform-ruby.vercel.app/
 | State/Data Flow | Zustand, Axios, controller/service structure |
 | Backend | NestJS 11, TypeScript |
 | Database | PostgreSQL with pgvector, Prisma ORM |
+| Background Jobs | BullMQ with Redis |
 | AI | OpenAI `text-embedding-3-small`, OpenAI chat completions |
 | PDF Processing | `pdf-parse-new` |
 | Auth | JWT, bcrypt |
@@ -79,7 +83,7 @@ backend/
   src/auth/            Signup, login, JWT guard
   src/documents/       PDF upload and document CRUD
   src/document-processing/
-                       PDF parsing, text chunking, embedding persistence
+                       BullMQ worker, PDF parsing, text chunking, embedding persistence
   src/retrieval/       Query embedding and pgvector similarity search
   src/chat/            RAG answer generation and citation mapping
   src/open-ai/         OpenAI embeddings and answer generation
@@ -108,6 +112,12 @@ PDF Upload
   |
   v
 File Validation and Storage
+  |
+  v
+Document Status: QUEUED
+  |
+  v
+BullMQ Processing Job
   |
   v
 Document Status: PROCESSING
@@ -158,7 +168,19 @@ Users upload a PDF through the frontend dashboard. The backend accepts multipart
 
 The file is saved to the backend `uploads/` directory and a `Document` record is created for the authenticated user.
 
-### 2. Text Extraction
+After the database record is created, the backend adds a BullMQ job to the `document-processing` queue and returns the document with status `QUEUED`. This keeps the upload request fast while the heavier RAG ingestion work runs in the background.
+
+If Redis is not available, the backend rejects the upload with a service-unavailable error instead of accepting a document that cannot be queued for processing.
+
+The frontend polls the documents API every `5000` ms while any document is in `QUEUED` or `PROCESSING`, so the dashboard and chat document picker update automatically when processing finishes.
+
+### 2. Background Processing and Retries
+
+`DocumentProcessingWorker` consumes jobs from the `document-processing` queue with concurrency `1`. Each job runs the ingestion pipeline for one uploaded PDF.
+
+When a worker starts a job, the document status changes from `QUEUED` to `PROCESSING`. If the job succeeds, the status becomes `READY`. If processing fails, BullMQ retries the job up to `3` attempts with exponential backoff starting at `5000` ms. After the final failed attempt, the document is marked `FAILED`.
+
+### 3. Text Extraction
 
 `PdfParserService` reads the uploaded PDF and extracts text page by page using `pdf-parse-new`. Each extracted page is stored as:
 
@@ -171,7 +193,7 @@ The file is saved to the backend `uploads/` directory and a `Document` record is
 
 Keeping page numbers attached to extracted text allows the final answer to cite where the retrieved context came from.
 
-### 3. Chunking with Overlap
+### 4. Chunking with Overlap
 
 `TextChunkerService` splits each page into overlapping text chunks:
 
@@ -181,7 +203,7 @@ Keeping page numbers attached to extracted text allows the final answer to cite 
 
 Overlap helps preserve context across chunk boundaries, which improves retrieval quality when an answer depends on text near the edge of a chunk.
 
-### 4. Embedding Generation
+### 5. Embedding Generation
 
 Every chunk is sent to OpenAI using the `text-embedding-3-small` embedding model. The returned 1536-dimensional vector is stored with the chunk.
 
@@ -194,7 +216,7 @@ DocumentChunk
   embedding vector(1536)
 ```
 
-### 5. pgvector Similarity Search
+### 6. pgvector Similarity Search
 
 When a user asks a question, the backend embeds the query and compares it against stored chunk embeddings with pgvector distance search:
 
@@ -205,7 +227,7 @@ LIMIT topK
 
 The chat flow uses `TOP_K` from the environment, falling back to `3` when the value is missing or invalid.
 
-### 6. Context-Aware Answer Generation
+### 7. Context-Aware Answer Generation
 
 The retrieved chunks are formatted into a source-labeled context block:
 
@@ -219,7 +241,7 @@ The retrieved chunks are formatted into a source-labeled context block:
 
 The answer model is instructed to use only the provided document context. If the answer is not stated or directly implied by the context, it should respond that the information could not be found in the document.
 
-### 7. Citations from Retrieved Chunks
+### 8. Citations from Retrieved Chunks
 
 The generated answer includes source markers such as `[1]` and `[2]`. The backend maps those source numbers back to the retrieved chunks and returns citation metadata:
 
@@ -243,6 +265,7 @@ The generated answer includes source markers such as `[1]` and `[2]`. The backen
 - Node.js 20+
 - npm
 - PostgreSQL database with the `vector` extension enabled
+- Redis running locally for BullMQ document-processing jobs
 - OpenAI API key
 
 ### 1. Clone and install dependencies
@@ -294,7 +317,23 @@ Make sure the PostgreSQL database supports pgvector. The Prisma schema uses:
 extensions = [vector]
 ```
 
-### 5. Start the backend
+### 5. Start Redis
+
+BullMQ is configured to connect to Redis at `localhost:6379`.
+
+Start Redis with whichever local setup you prefer. For example:
+
+```bash
+redis-server
+```
+
+or:
+
+```bash
+docker run --name ai-knowledge-redis -p 6379:6379 redis:7
+```
+
+### 6. Start the backend
 
 From `backend/`:
 
@@ -310,7 +349,7 @@ Swagger docs are available in development mode at:
 http://localhost:4000/docs
 ```
 
-### 6. Start the frontend
+### 7. Start the frontend
 
 From `frontend/`:
 
@@ -385,7 +424,7 @@ Error responses follow the global exception filter shape:
 
 | Method | Endpoint | Description |
 | --- | --- | --- |
-| `POST` | `/documents` | Upload and process a PDF |
+| `POST` | `/documents` | Upload a PDF and queue background processing |
 | `GET` | `/documents` | List current user's documents |
 | `GET` | `/documents/:id` | Get one document |
 | `GET` | `/documents/:id/chunks` | Get chunks for a document |
@@ -423,12 +462,11 @@ Response shape:
 
 ## Future Improvements
 
-- Background job queue for document processing instead of synchronous upload processing
 - Chat history and multi-turn conversations
 - Multi-document search and cross-document answers
 - Streaming chat responses
 - Better citation UI with source previews and highlighted chunks
-- Upload progress, retry handling, and richer failed-processing messages
+- Upload progress and richer failed-processing messages
 - Admin observability for processing time, retrieval distance, and token usage
 - Automated tests for the full upload-to-chat RAG workflow
-- Docker Compose setup for local PostgreSQL with pgvector
+- Docker Compose setup for local PostgreSQL with pgvector and Redis

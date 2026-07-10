@@ -42,6 +42,7 @@ model Document {
 
 enum FileStatus {
   UPLOADED
+  QUEUED
   PROCESSING
   READY
   FAILED
@@ -56,4 +57,5 @@ model DocumentChunk {
   pageNumber Int
   embedding  Unsupported("vector(1536)")?
   createdAt  DateTime                     @default(now())
+  @@index([embedding], map: "chunk_embedding_idx")
 }

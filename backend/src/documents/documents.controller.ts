@@ -102,13 +102,9 @@ export class DocumentsController {
     };
     const retVal = await this.documentsService.create(fileToStore);
 
-    if (!retVal) throw Error('Document upload failed');
+    if (!retVal) throw Error('Document processing failed');
 
-    await this.documentProcessingService.processDocument(filename, retVal.id);
-
-    // Status may have been updated by processing; fetch fresh record before returning
-    const fresh = await this.documentsService.findOne(retVal.id, userId);
-    return fresh ?? retVal;
+    return retVal;
   }
 
   @Get()

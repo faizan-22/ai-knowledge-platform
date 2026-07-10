@@ -1,5 +1,12 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { InjectQueue } from '@nestjs/bullmq';
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { Queue } from 'bullmq';
 import { DatabaseService } from 'src/database/database.service';
 
 const documentSelect = {
@@ -15,13 +22,56 @@ const documentSelect = {
 @Injectable()
 export class DocumentsService {
   private readonly logger = new Logger(DocumentsService.name);
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    @InjectQueue('document-processing') private documentQueue: Queue,
+  ) {}
 
   async create(createDocumentDto: Prisma.DocumentCreateInput) {
-    return await this.databaseService.document.create({
+    const retVal = await this.databaseService.document.create({
       data: createDocumentDto,
       select: documentSelect,
     });
+
+    const client = await this.documentQueue.client;
+    const isRedisConnected = client.status === 'ready';
+
+    if (!isRedisConnected) {
+      this.logger.error('Queue system is currently unavaible');
+      throw new ServiceUnavailableException(
+        'Our background processing system is temporarily down. Please retry processing in a few minutes.',
+      );
+    }
+
+    await this.documentQueue.add(
+      'process',
+      {
+        id: retVal.id,
+        filePath: retVal.filePath,
+      },
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnFail: { count: 100 },
+      },
+    );
+
+    const freshVal = await this.databaseService.document.update({
+      where: {
+        id: retVal.id,
+      },
+      data: {
+        status: 'QUEUED',
+      },
+      select: documentSelect,
+    });
+
+    this.logger.log('Queued successfully');
+
+    return freshVal;
   }
 
   async findAll(userId: number) {

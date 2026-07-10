@@ -15,6 +15,7 @@ import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 import { CatchExceptionFilter } from './common/exception/exception.filter';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -26,6 +27,16 @@ import { CatchExceptionFilter } from './common/exception/exception.filter';
     RetrievalModule,
     ChatModule,
     OpenAiModule,
+    BullModule.forRoot({
+      connection: process.env.REDIS_URL
+        ? {
+            url: process.env.REDIS_URL,
+          }
+        : {
+            host: 'localhost',
+            port: 6379,
+          },
+    }),
   ],
   controllers: [AppController],
   providers: [
