@@ -4,10 +4,11 @@ AI Knowledge Platform is a full-stack RAG application for uploading PDF document
 
 The project combines a Next.js dashboard and chat experience with a NestJS API, PostgreSQL, Prisma, and pgvector-backed semantic search.
 
-## Screenshots / Demo Preview
+## Demo
+- Live App: https://ai-knowledge-platform-ruby.vercel.app/
+- Demo Video: https://youtu.be/bczyMG_SXPw
 
-### Demo
-https://ai-knowledge-platform-ruby.vercel.app/
+## Screenshots
 
 ### Login
 
@@ -20,6 +21,10 @@ https://ai-knowledge-platform-ruby.vercel.app/
 ### Dashboard
 
 ![Dashboard screen](docs/screenshots/dashboard.png)
+
+### Document Processing
+
+![Dashboard screen](docs/screenshots/processing.png)
 
 ### Upload PDF Dialog
 
