@@ -116,6 +116,15 @@ export function Dashboard() {
   const [retryingDocumentId, setRetryingDocumentId] = useState<number | null>(
     null
   )
+  const [documentToRename, setDocumentToRename] = useState<Document | null>(
+    null
+  )
+  const [renameTitle, setRenameTitle] = useState("")
+  const [isRenaming, setIsRenaming] = useState(false)
+  const [documentToDelete, setDocumentToDelete] = useState<Document | null>(
+    null
+  )
+  const [isDeleting, setIsDeleting] = useState(false)
   const uploadFileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -188,39 +197,75 @@ export function Dashboard() {
     }
   }
 
-  function handleRenameDocument(document: Document) {
-    const nextTitle = window.prompt(
-      APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_PROMPT,
-      document.title
-    )
+  function openRenameDialog(document: Document) {
+    setDocumentToRename(document)
+    setRenameTitle(document.title)
+  }
 
-    if (nextTitle === null || nextTitle.trim() === document.title) {
+  async function handleRenameDocument(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!documentToRename) {
       return
     }
 
-    toast.promise(renameDocumentController(document.id, nextTitle), {
+    const nextTitle = renameTitle.trim()
+
+    if (nextTitle === documentToRename.title) {
+      setDocumentToRename(null)
+      setRenameTitle("")
+      return
+    }
+
+    setIsRenaming(true)
+
+    const renamePromise = renameDocumentController(
+      documentToRename.id,
+      nextTitle
+    )
+
+    toast.promise(renamePromise, {
       loading: APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_LOADING,
       success: APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_SUCCESS,
       error: (error) =>
         getApiErrorMessage(error, APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_ERROR),
     })
+
+    try {
+      await renamePromise
+      setDocumentToRename(null)
+      setRenameTitle("")
+    } catch {
+      return
+    } finally {
+      setIsRenaming(false)
+    }
   }
 
-  function handleDeleteDocument(document: Document) {
-    const shouldDelete = window.confirm(
-      APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_CONFIRM(document.title)
-    )
-
-    if (!shouldDelete) {
+  async function handleDeleteDocument() {
+    if (!documentToDelete) {
       return
     }
 
-    toast.promise(deleteDocumentController(document.id), {
+    setIsDeleting(true)
+
+    const deletePromise = deleteDocumentController(documentToDelete.id)
+
+    toast.promise(deletePromise, {
       loading: APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_LOADING,
       success: APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_SUCCESS,
       error: (error) =>
         getApiErrorMessage(error, APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_ERROR),
     })
+
+    try {
+      await deletePromise
+      setDocumentToDelete(null)
+    } catch {
+      return
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   async function handleRetryDocument(document: Document) {
@@ -250,6 +295,114 @@ export function Dashboard() {
 
   return (
     <section className="flex flex-col gap-4">
+      <Dialog
+        open={Boolean(documentToRename)}
+        onOpenChange={(open) => {
+          if (isRenaming) {
+            return
+          }
+
+          if (!open) {
+            setDocumentToRename(null)
+            setRenameTitle("")
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <form onSubmit={handleRenameDocument} className="grid gap-4">
+            <DialogHeader>
+              <DialogTitle>
+                {APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_PROMPT}
+              </DialogTitle>
+              <DialogDescription>
+                {APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_DIALOG_DESCRIPTION}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="grid gap-2">
+              <Label htmlFor="rename-document-title">
+                {APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_TITLE_LABEL}
+              </Label>
+              <Input
+                id="rename-document-title"
+                value={renameTitle}
+                onChange={(event) => setRenameTitle(event.target.value)}
+                disabled={isRenaming}
+                required
+              />
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={isRenaming}
+                onClick={() => {
+                  setDocumentToRename(null)
+                  setRenameTitle("")
+                }}
+              >
+                {APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_CANCEL_BUTTON}
+              </Button>
+              <Button type="submit" disabled={isRenaming}>
+                {isRenaming
+                  ? APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_LOADING
+                  : APP_CONSTANTS.MESSAGES.DOCUMENT_RENAME_SAVE_BUTTON}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={Boolean(documentToDelete)}
+        onOpenChange={(open) => {
+          if (isDeleting) {
+            return
+          }
+
+          if (!open) {
+            setDocumentToDelete(null)
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_DIALOG_TITLE}
+            </DialogTitle>
+            <DialogDescription>
+              {documentToDelete
+                ? APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_CONFIRM(
+                    documentToDelete.title
+                  )
+                : ""}
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isDeleting}
+              onClick={() => setDocumentToDelete(null)}
+            >
+              {APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_CANCEL_BUTTON}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={isDeleting}
+              onClick={handleDeleteDocument}
+            >
+              {isDeleting
+                ? APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_LOADING
+                : APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_BUTTON}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold tracking-tight">Documents</h3>
@@ -553,14 +706,14 @@ export function Dashboard() {
                           View
                         </DropdownMenuItem>
                         <DropdownMenuItem
-                          onClick={() => handleRenameDocument(document)}
+                          onClick={() => openRenameDialog(document)}
                         >
                           <PencilIcon />
                           Rename
                         </DropdownMenuItem>
                         <DropdownMenuItem
                           variant="destructive"
-                          onClick={() => handleDeleteDocument(document)}
+                          onClick={() => setDocumentToDelete(document)}
                         >
                           <Trash2Icon />
                           Delete
