@@ -55,6 +55,9 @@ export const APP_CONSTANTS = {
     DOCUMENT_DELETE_LOADING: "Deleting document...",
     DOCUMENT_DELETE_SUCCESS: "Document deleted",
     DOCUMENT_DELETE_ERROR: "Unable to delete document",
+    DOCUMENT_RETRY_LOADING: "Retrying document...",
+    DOCUMENT_RETRY_SUCCESS: "Document retry started",
+    DOCUMENT_RETRY_ERROR: "Unable to retry document",
     DOCUMENT_LOAD_ERROR: "Unable to load documents",
     CHAT_DOCUMENT_DIALOG_TITLE: "Choose document",
     CHAT_DOCUMENT_DIALOG_DESCRIPTION:

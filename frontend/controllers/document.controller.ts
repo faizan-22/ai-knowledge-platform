@@ -6,6 +6,7 @@ import {
   deleteDocument,
   getDocuments,
   renameDocument,
+  retryDocument,
   uploadDocument,
 } from "@/services/document.service"
 import { useDocumentStore } from "@/stores/document.store"
@@ -116,6 +117,24 @@ export async function deleteDocumentController(documentId: number) {
     const message = getApiErrorMessage(
       error,
       APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_ERROR
+    )
+
+    useDocumentStore.getState().setError(message)
+    throw new Error(message)
+  }
+}
+
+export async function retryDocumentController(documentId: number) {
+  useDocumentStore.getState().setError(null)
+
+  try {
+    const response = await retryDocument(documentId)
+    useDocumentStore.getState().updateDocument(response.data)
+    return response
+  } catch (error) {
+    const message = getApiErrorMessage(
+      error,
+      APP_CONSTANTS.MESSAGES.DOCUMENT_RETRY_ERROR
     )
 
     useDocumentStore.getState().setError(message)

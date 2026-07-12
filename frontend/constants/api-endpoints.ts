@@ -5,8 +5,9 @@ export const API_ENDPOINTS = {
   },
   DOCUMENTS: {
     LIST: "/documents",
-    TITLE: (documentId: number) => `/documents/title/${documentId}`,
+    TITLE: (documentId: number) => `/documents/${documentId}/title`,
     DETAIL: (documentId: number) => `/documents/${documentId}`,
+    RETRY: (documentId: number) => `/documents/${documentId}/retry`,
   },
   CHAT: {
     SEND: (documentId: number) => `/chat/${documentId}`,

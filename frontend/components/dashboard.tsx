@@ -21,6 +21,7 @@ import {
   deleteDocumentController,
   loadDocumentsController,
   renameDocumentController,
+  retryDocumentController,
   uploadDocumentController,
 } from "@/controllers/document.controller"
 import { getApiErrorMessage } from "@/lib/api-error"
@@ -112,6 +113,9 @@ export function Dashboard() {
   const [uploadTitle, setUploadTitle] = useState("")
   const [uploadFile, setUploadFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [retryingDocumentId, setRetryingDocumentId] = useState<number | null>(
+    null
+  )
   const uploadFileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -217,6 +221,27 @@ export function Dashboard() {
       error: (error) =>
         getApiErrorMessage(error, APP_CONSTANTS.MESSAGES.DOCUMENT_DELETE_ERROR),
     })
+  }
+
+  async function handleRetryDocument(document: Document) {
+    setRetryingDocumentId(document.id)
+
+    const retryPromise = retryDocumentController(document.id)
+
+    toast.promise(retryPromise, {
+      loading: APP_CONSTANTS.MESSAGES.DOCUMENT_RETRY_LOADING,
+      success: APP_CONSTANTS.MESSAGES.DOCUMENT_RETRY_SUCCESS,
+      error: (error) =>
+        getApiErrorMessage(error, APP_CONSTANTS.MESSAGES.DOCUMENT_RETRY_ERROR),
+    })
+
+    try {
+      await retryPromise
+    } catch {
+      return
+    } finally {
+      setRetryingDocumentId(null)
+    }
   }
 
   function handleOpenInChat(document: Document) {
@@ -397,10 +422,10 @@ export function Dashboard() {
             <TableHeader className="bg-muted/40">
               <TableRow>
                 <TableHead className="w-[24%] px-4">Document</TableHead>
-                <TableHead className="w-[28%]">File Name</TableHead>
-                <TableHead className="w-[10%]">Type</TableHead>
-                <TableHead className="w-[10%]">Size</TableHead>
-                <TableHead className="w-[12%]">Status</TableHead>
+                <TableHead className="w-[24%]">File Name</TableHead>
+                <TableHead className="w-[8%]">Type</TableHead>
+                <TableHead className="w-[8%]">Size</TableHead>
+                <TableHead className="w-[16%]">Status</TableHead>
                 <TableHead className="w-[12%]">Chat</TableHead>
                 <TableHead className="w-20 pr-6 text-right">Actions</TableHead>
               </TableRow>
@@ -436,11 +461,11 @@ export function Dashboard() {
             <TableHeader className="bg-muted/40">
               <TableRow>
                 <TableHead className="w-[24%] px-4">Document</TableHead>
-                <TableHead className="w-[28%]">File Name</TableHead>
-                <TableHead className="w-[10%]">Type</TableHead>
-                <TableHead className="w-[10%]">Size</TableHead>
-                <TableHead className="w-[10%]">Status</TableHead>
-                <TableHead className="w-[14%]">Chat</TableHead>
+                <TableHead className="w-[24%]">File Name</TableHead>
+                <TableHead className="w-[8%]">Type</TableHead>
+                <TableHead className="w-[8%]">Size</TableHead>
+                <TableHead className="w-[16%]">Status</TableHead>
+                <TableHead className="w-[12%]">Chat</TableHead>
                 <TableHead className="w-20 pr-6 text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -472,12 +497,32 @@ export function Dashboard() {
                     {formatFileSize(document.size)}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant="outline"
-                      className={getStatusBadgeClassName(document.status)}
-                    >
-                      {formatStatus(document.status)}
-                    </Badge>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={getStatusBadgeClassName(document.status)}
+                      >
+                        {formatStatus(document.status)}
+                      </Badge>
+                      {document.status === "FAILED" ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={retryingDocumentId === document.id}
+                          onClick={() => handleRetryDocument(document)}
+                        >
+                          <RefreshCwIcon
+                            className={
+                              retryingDocumentId === document.id
+                                ? "animate-spin"
+                                : ""
+                            }
+                          />
+                          Retry
+                        </Button>
+                      ) : null}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Button

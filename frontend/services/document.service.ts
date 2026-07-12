@@ -36,6 +36,14 @@ export async function renameDocument(
   return response.data
 }
 
+export async function retryDocument(
+  documentId: number
+): Promise<DocumentResponse> {
+  const response = await api.post(API_ENDPOINTS.DOCUMENTS.RETRY(documentId), {})
+
+  return response.data
+}
+
 export async function deleteDocument(
   documentId: number
 ): Promise<DocumentResponse> {
