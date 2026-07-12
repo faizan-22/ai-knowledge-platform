@@ -5,7 +5,7 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { FileStatus, Prisma } from '@prisma/client';
 import { Queue } from 'bullmq';
 import { DatabaseService } from 'src/database/database.service';
 
@@ -181,5 +181,55 @@ export class DocumentsService {
     });
 
     return deletedDocument;
+  }
+
+  async retryProcessing(id: number, userId: number) {
+    const documentInfo = await this.databaseService.document.findUnique({
+      where: {
+        id: id,
+      },
+      select: { userId: true, status: true, filePath: true },
+    });
+
+    if (!documentInfo) throw new NotFoundException('Document Not Found!');
+
+    if (documentInfo.userId != userId) {
+      throw new NotFoundException('Document Not Found!');
+    }
+
+    if (documentInfo.status != FileStatus.FAILED) {
+      throw new NotFoundException('Document is not in Failed State!');
+    }
+
+    await this.documentQueue.add(
+      'process',
+      {
+        id,
+        filePath: documentInfo.filePath,
+      },
+      {
+        attempts: 3,
+        backoff: {
+          type: 'exponential',
+          delay: 5000,
+        },
+        removeOnFail: { count: 100 },
+      },
+    );
+
+    const freshVal = await this.databaseService.document.update({
+      where: {
+        id,
+      },
+      data: {
+        status: 'QUEUED',
+        processingError: null,
+      },
+      select: documentSelect,
+    });
+
+    this.logger.log('Queued successfully');
+
+    return freshVal;
   }
 }

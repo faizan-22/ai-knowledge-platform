@@ -125,7 +125,7 @@ export class DocumentsController {
     return this.documentsService.findChunks(+id, userId);
   }
 
-  @Patch('/title/:id')
+  @Patch(':id/title')
   update(
     @Request() req,
     @Param('id') id: string,
@@ -137,6 +137,12 @@ export class DocumentsController {
       userId,
       updateDocumentDto.title,
     );
+  }
+
+  @Post('/:id/retry')
+  retry(@Request() req, @Param('id') id: string) {
+    const userId = parseInt(req.payload.sub);
+    return this.documentsService.retryProcessing(+id, userId);
   }
 
   @Delete(':id')

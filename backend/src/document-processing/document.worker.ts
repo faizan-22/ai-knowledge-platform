@@ -10,7 +10,7 @@ export interface jobType {
   filePath: string;
 }
 
-@Processor('document-processing', { concurrency: 1 })
+@Processor('document-processing', { concurrency: 5 })
 export class DocumentProcessingWorker extends WorkerHost {
   private readonly logger = new Logger(DocumentProcessingWorker.name);
 
@@ -55,7 +55,11 @@ export class DocumentProcessingWorker extends WorkerHost {
           where: {
             id: job.data?.id,
           },
-          data: { status: FileStatus.FAILED },
+          data: {
+            status: FileStatus.FAILED,
+            processingError:
+              err instanceof Error ? err.message : 'Unknown Processing Error',
+          },
         });
       }
       this.logger.error(
@@ -64,10 +68,5 @@ export class DocumentProcessingWorker extends WorkerHost {
 
       throw err;
     }
-  }
-
-  // Quick helper to simulate a 2-second file/database operation
-  private simulateHeavyWork(): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, 2000));
   }
 }
